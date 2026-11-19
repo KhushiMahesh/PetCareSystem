@@ -22,18 +22,22 @@ builder.Services.AddAuthentication(options =>
     })
     .AddIdentityCookies();
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+// PostgreSQL database connection
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
+// ASP.NET Core Identity with Role Management
 builder.Services.AddIdentityCore<ApplicationUser>(options =>
     {
         options.SignIn.RequireConfirmedAccount = true;
         options.Stores.SchemaVersion = IdentitySchemaVersions.Version3;
     })
+    .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddSignInManager()
     .AddDefaultTokenProviders();
@@ -41,6 +45,37 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
 var app = builder.Build();
+
+// Initialize database reference data and application roles
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+
+    // Seed hospital reference data
+    var dbContext = services
+        .GetRequiredService<ApplicationDbContext>();
+
+    await DbInitializer.SeedAsync(dbContext);
+
+    // Create application roles
+    var roleManager = services
+        .GetRequiredService<RoleManager<IdentityRole>>();
+
+    string[] roles =
+    [
+        "Admin",
+        "Veterinarian",
+        "PetOwner"
+    ];
+
+    foreach (var role in roles)
+    {
+        if (!await roleManager.RoleExistsAsync(role))
+        {
+            await roleManager.CreateAsync(new IdentityRole(role));
+        }
+    }
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -50,7 +85,6 @@ if (app.Environment.IsDevelopment())
 else
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days; you may want to change this to a different value for production scenarios.
     app.UseHsts();
 }
 
@@ -60,10 +94,11 @@ app.UseHttpsRedirection();
 app.UseAntiforgery();
 
 app.MapStaticAssets();
+
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-// Add additional endpoints required by the Identity /Account Razor components.
+// Identity endpoints
 app.MapAdditionalIdentityEndpoints();
 
 app.Run();
