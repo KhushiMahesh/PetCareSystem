@@ -3,3 +3,9 @@ obj/
 .vs/
 *.user
 *.suo
+
+# Local database files
+**/app.db
+
+# SQLite migration backup
+SQLite_Migrations_Backup/
