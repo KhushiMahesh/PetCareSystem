@@ -1,4 +1,4 @@
-﻿@page "/Account/Manage/Email"
+@page "/Account/Manage/Email"
 
 @using System.ComponentModel.DataAnnotations
 @using System.Text
@@ -12,47 +12,75 @@
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Manage email</PageTitle>
+<PageTitle>Email Settings | Pawberry Animal Hospital</PageTitle>
 
-<h3>Manage email</h3>
+<div class="container py-4 pawberry-profile pawberry-email-page">
+    <div class="profile-welcome mb-4">
+        <div>
+            <span class="profile-eyebrow">ACCOUNT SETTINGS</span>
+            <h2>My Email Address 💌</h2>
+            <p>Manage your email and keep your Pawberry account connected.</p>
+        </div>
+        <div class="profile-avatar">✉️</div>
+    </div>
 
-<StatusMessage Message="@message"/>
-<div class="row">
-    <div class="col-xl-6">
+    <StatusMessage Message="@message" />
+
+    <div class="profile-card pawberry-email-card">
+        <div class="profile-card-heading">
+            <div class="profile-heading-icon">📧</div>
+            <div>
+                <h4>Email Information</h4>
+                <p>Your registered email address and verification details.</p>
+            </div>
+        </div>
+
         <form @onsubmit="OnSendEmailVerificationAsync" @formname="send-verification" id="send-verification-form" method="post">
             <AntiforgeryToken />
         </form>
+
         <EditForm Model="Input" FormName="change-email" OnValidSubmit="OnValidSubmitAsync" method="post">
             <DataAnnotationsValidator />
             <ValidationSummary class="text-danger" role="alert" />
-            @if (isEmailConfirmed)
-            {
-                <div class="form-floating mb-3 input-group">
-                    <input type="text" value="@email" id="email" class="form-control" placeholder="Enter your email" disabled />
-                    <div class="input-group-append">
-                        <span class="h-100 input-group-text text-success font-weight-bold">✓</span>
-                    </div>
-                    <label for="email" class="form-label">Email</label>
-                </div>
-            }
-            else
-            {
-                <div class="form-floating mb-3">
-                    <input type="text" value="@email" id="email" class="form-control" placeholder="Enter your email" disabled />
-                    <label for="email" class="form-label">Email</label>
-                    <button type="submit" class="btn btn-link" form="send-verification-form">Send verification email</button>
-                </div>
-            }
-            <div class="form-floating mb-3">
-                <InputText @bind-Value="Input.NewEmail" id="Input.NewEmail" class="form-control" autocomplete="email" aria-required="true" placeholder="Enter a new email" />
-                <label for="Input.NewEmail" class="form-label">New email</label>
+
+            <div class="email-current-box mb-4">
+                <label class="form-label">Current email address</label>
+                @if (isEmailConfirmed)
+                {
+                    <div class="email-status verified">✓ Verified</div>
+                }
+                else
+                {
+                    <div class="email-status pending">! Not verified</div>
+                }
+
+                <input type="text" value="@email" id="email" class="form-control profile-input" placeholder="Your current email" disabled />
+
+                @if (!isEmailConfirmed)
+                {
+                    <button type="submit" class="btn btn-link px-0 mt-2" form="send-verification-form">
+                        Send verification email →
+                    </button>
+                }
+            </div>
+
+            <div class="mb-4">
+                <label for="Input.NewEmail" class="form-label">New email address</label>
+                <InputText @bind-Value="Input.NewEmail" id="Input.NewEmail" class="form-control profile-input" autocomplete="email" aria-required="true" placeholder="Enter your new email address" />
                 <ValidationMessage For="() => Input.NewEmail" class="text-danger" />
             </div>
-            <button type="submit" class="w-100 btn btn-lg btn-primary">Change email</button>
+
+            <button type="submit" class="btn profile-save-btn">
+                Change Email Address →
+            </button>
         </EditForm>
     </div>
-</div>
 
+    <div class="profile-note mt-4">
+        <i class="bi bi-shield-check"></i>
+        Your email address will only change after you confirm the verification link sent to your new email.
+    </div>
+</div>
 @code {
     private string? message;
     private ApplicationUser? user;

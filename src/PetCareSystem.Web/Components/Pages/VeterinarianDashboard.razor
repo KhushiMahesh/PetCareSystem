@@ -91,7 +91,7 @@
                 <p><strong>Name:</strong> @Veterinarian.FullName</p>
                 <p><strong>Qualification:</strong> @Veterinarian.Qualification</p>
                 <p><strong>Registration Number:</strong> @Veterinarian.ProfessionalRegistrationNumber</p>
-                <p><strong>Consultation Fee:</strong> â‚¹@Veterinarian.ConsultationFee</p>
+                <p><strong>Consultation Fee:</strong> ₹@Veterinarian.ConsultationFee</p>
             </div>
         </div>
 
@@ -169,6 +169,11 @@
                     <hr />
 
                     <h5>Pet Information</h5>
+                    <div class="text-center mb-3">
+                        <img src="@PetCareSystem.Web.Helpers.PetSpeciesIllustration.GetImagePath(SelectedAppointment.Pet.Species?.SpeciesName)"
+                             alt="@SelectedAppointment.Pet.Species?.SpeciesName"
+                             class="pawberry-pet-illustration" />
+                    </div>
 
                     <p><strong>Name:</strong> @SelectedAppointment.Pet.PetName</p>
 
@@ -458,12 +463,12 @@
 
                                             <p>
                                                 <strong>Recommended age:</strong>
-                                                @(vaccine.RecommendedAge ?? "Unavailable â€” veterinarian verification required")
+                                                @(vaccine.RecommendedAge ?? "Unavailable — veterinarian verification required")
                                             </p>
 
                                             <p>
                                                 <strong>Recommended dose:</strong>
-                                                @(vaccine.RecommendedDose ?? "Unavailable â€” check product label")
+                                                @(vaccine.RecommendedDose ?? "Unavailable — check product label")
                                             </p>
 
                                             <p>
@@ -473,7 +478,7 @@
 
                                             <p>
                                                 <strong>Recommended interval:</strong>
-                                                @(vaccine.RecommendedInterval ?? "Unavailable â€” veterinarian verification required")
+                                                @(vaccine.RecommendedInterval ?? "Unavailable — veterinarian verification required")
                                             </p>
 
                                             <hr />

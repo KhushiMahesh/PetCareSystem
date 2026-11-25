@@ -1,4 +1,4 @@
-﻿@page "/Account/Manage"
+@page "/Account/Manage"
 
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Identity
@@ -8,30 +8,64 @@
 @inject SignInManager<ApplicationUser> SignInManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Profile</PageTitle>
+<PageTitle>My Profile | Pawberry Animal Hospital</PageTitle>
 
-<h3>Profile</h3>
-<StatusMessage />
+<div class="container py-4 pawberry-profile">
 
-<div class="row">
-    <div class="col-xl-6">
+    <div class="profile-welcome mb-4">
+        <div>
+            <span class="profile-eyebrow">YOUR ACCOUNT</span>
+            <h2>My Profile <span>🐾</span></h2>
+            <p>Manage your personal information and account details.</p>
+        </div>
+        <div class="profile-avatar">🐾</div>
+    </div>
+
+    <StatusMessage />
+
+    <div class="profile-card">
+        <div class="profile-card-heading">
+            <div class="profile-heading-icon">
+                <i class="bi bi-person-heart"></i>
+            </div>
+            <div>
+                <h4>Personal Information</h4>
+                <p>Keep your contact details up to date.</p>
+            </div>
+        </div>
+
         <EditForm Model="Input" FormName="profile" OnValidSubmit="OnValidSubmitAsync" method="post">
             <DataAnnotationsValidator />
             <ValidationSummary class="text-danger" role="alert" />
-            <div class="form-floating mb-3">
-                <input type="text" value="@username" id="username" class="form-control" placeholder="Choose your username." disabled />
-                <label for="username" class="form-label">Username</label>
+
+            <div class="mb-4">
+                <label class="form-label" for="username">Username</label>
+                <input type="text" value="@username" id="username"
+                       class="form-control profile-input" placeholder="Your username" disabled />
+                <small class="text-muted">Your username cannot be changed here.</small>
             </div>
-            <div class="form-floating mb-3">
-                <InputText @bind-Value="Input.PhoneNumber" id="Input.PhoneNumber" class="form-control" placeholder="Enter your phone number" />
-                <label for="Input.PhoneNumber" class="form-label">Phone number</label>
+
+            <div class="mb-4">
+                <label class="form-label" for="Input.PhoneNumber">Phone Number</label>
+                <InputText @bind-Value="Input.PhoneNumber"
+                           id="Input.PhoneNumber"
+                           class="form-control profile-input"
+                           placeholder="Enter your phone number" />
                 <ValidationMessage For="() => Input.PhoneNumber" class="text-danger" />
             </div>
-            <button type="submit" class="w-100 btn btn-lg btn-primary">Save</button>
+
+            <button type="submit" class="btn profile-save-btn">
+                <i class="bi bi-check-circle me-2"></i>Save Changes
+            </button>
         </EditForm>
     </div>
-</div>
 
+    <div class="profile-note mt-4">
+        <i class="bi bi-shield-check"></i>
+        Your account information is protected and only accessible to you.
+    </div>
+
+</div>
 @code {
     private ApplicationUser? user;
     private string? username;

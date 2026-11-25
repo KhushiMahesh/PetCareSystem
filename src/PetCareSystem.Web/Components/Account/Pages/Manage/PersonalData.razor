@@ -1,4 +1,4 @@
-﻿@page "/Account/Manage/PersonalData"
+@page "/Account/Manage/PersonalData"
 
 @using Microsoft.AspNetCore.Identity
 @using PetCareSystem.Web.Data
@@ -6,27 +6,50 @@
 @inject UserManager<ApplicationUser> UserManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Personal Data</PageTitle>
+<PageTitle>Personal Data | Pawberry Animal Hospital</PageTitle>
 
-<StatusMessage />
-<h3>Personal Data</h3>
+<div class="container py-4 pawberry-profile">
+    <div class="profile-welcome mb-4">
+        <div>
+            <span class="profile-eyebrow">ACCOUNT PRIVACY</span>
+            <h2>My Personal Data 🛡️</h2>
+            <p>Manage and protect the information associated with your account.</p>
+        </div>
+        <div class="profile-avatar">🔐</div>
+    </div>
 
-<div class="row">
-    <div class="col-md-6">
-        <p>Your account contains personal data that you have given us. This page allows you to download or delete that data.</p>
-        <p>
-            <strong>Deleting this data will permanently remove your account, and this cannot be recovered.</strong>
-        </p>
+    <StatusMessage />
+
+    <div class="profile-card mb-4">
+        <div class="profile-card-heading">
+            <div class="profile-heading-icon">📁</div>
+            <div>
+                <h4>Download Your Data</h4>
+                <p>Keep a copy of your personal account information.</p>
+            </div>
+        </div>
+        <p class="text-muted">You can download the personal data associated with your Pawberry account.</p>
         <form action="Account/Manage/DownloadPersonalData" method="post">
             <AntiforgeryToken />
-            <button class="btn btn-primary" type="submit">Download</button>
+            <button class="btn profile-save-btn" type="submit">⬇ Download Personal Data</button>
         </form>
-        <p>
-            <a href="Account/Manage/DeletePersonalData" class="btn btn-danger">Delete</a>
-        </p>
+    </div>
+
+    <div class="profile-card pawberry-delete-card">
+        <div class="profile-card-heading">
+            <div class="profile-heading-icon pawberry-delete-icon">⚠️</div>
+            <div>
+                <h4>Delete Your Account</h4>
+                <p>Permanently remove your account and personal data.</p>
+            </div>
+        </div>
+        <div class="pawberry-delete-warning">
+            <strong>Important: This action cannot be undone.</strong>
+            <p class="mb-0">Deleting your account permanently removes it. You will not be able to recover it.</p>
+        </div>
+        <a href="Account/Manage/DeletePersonalData" class="btn btn-danger mt-3">Continue to Account Deletion</a>
     </div>
 </div>
-
 @code {
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;

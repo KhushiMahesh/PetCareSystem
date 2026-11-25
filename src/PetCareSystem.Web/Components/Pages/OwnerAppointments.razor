@@ -120,7 +120,7 @@
                             {
                                 <small class="text-danger">
                                     No active veterinarian is registered for
-                                    this specialisation and pet species.
+                                    this specialisation.
                                 </small>
                             }
                         </div>
@@ -480,10 +480,7 @@
                 v.IsActive &&
                 DbContext.VeterinarianSpecialisations.Any(vs =>
                     vs.VeterinarianProfileId == v.VeterinarianProfileId &&
-                    vs.SpecialisationId == SelectedSpecialisationId) &&
-                DbContext.VeterinarianSpecies.Any(vs =>
-                    vs.VeterinarianProfileId == v.VeterinarianProfileId &&
-                    vs.SpeciesId == pet.SpeciesId))
+                    vs.SpecialisationId == SelectedSpecialisationId))
             .OrderBy(v => v.FullName)
             .ToListAsync();
     }
@@ -662,10 +659,7 @@
                     v.IsActive &&
                     DbContext.VeterinarianSpecialisations.Any(vs =>
                         vs.VeterinarianProfileId == v.VeterinarianProfileId &&
-                        vs.SpecialisationId == SelectedSpecialisationId) &&
-                    DbContext.VeterinarianSpecies.Any(vs =>
-                        vs.VeterinarianProfileId == v.VeterinarianProfileId &&
-                        vs.SpeciesId == pet.SpeciesId));
+                        vs.SpecialisationId == SelectedSpecialisationId));
 
             if (!validDoctor)
             {

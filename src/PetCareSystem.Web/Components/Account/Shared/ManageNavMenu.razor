@@ -1,35 +1,42 @@
-﻿@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Identity
 @using PetCareSystem.Web.Data
 
 @inject SignInManager<ApplicationUser> SignInManager
 
-<ul class="nav nav-pills flex-column">
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage" Match="NavLinkMatch.All">Profile</NavLink>
-    </li>
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage/Email">Email</NavLink>
-    </li>
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage/ChangePassword">Password</NavLink>
-    </li>
+<div class="pawberry-settings-nav">
+    <NavLink class="settings-nav-card profile-nav" href="Account/Manage" Match="NavLinkMatch.All">
+        <span class="settings-nav-icon">👤</span>
+        <span class="settings-nav-text"><strong>Profile</strong><small>Your personal information</small></span>
+        <span class="settings-nav-arrow">›</span>
+    </NavLink>
+
+    <NavLink class="settings-nav-card email-nav" href="Account/Manage/Email">
+        <span class="settings-nav-icon">✉️</span>
+        <span class="settings-nav-text"><strong>Email</strong><small>Manage your email address</small></span>
+        <span class="settings-nav-arrow">›</span>
+    </NavLink>
+
+    <NavLink class="settings-nav-card password-nav" href="Account/Manage/ChangePassword">
+        <span class="settings-nav-icon">🔒</span>
+        <span class="settings-nav-text"><strong>Password</strong><small>Keep your account secure</small></span>
+        <span class="settings-nav-arrow">›</span>
+    </NavLink>
+
     @if (hasExternalLogins)
     {
-        <li class="nav-item">
-            <NavLink class="nav-link" href="Account/Manage/ExternalLogins">External logins</NavLink>
-        </li>
+        <NavLink class="settings-nav-card external-nav" href="Account/Manage/ExternalLogins">
+            <span class="settings-nav-icon">🔗</span>
+            <span class="settings-nav-text"><strong>External Logins</strong><small>Connected sign-in accounts</small></span>
+            <span class="settings-nav-arrow">›</span>
+        </NavLink>
     }
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage/TwoFactorAuthentication">Two-factor authentication</NavLink>
-    </li>
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage/Passkeys">Passkeys</NavLink>
-    </li>
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage/PersonalData">Personal data</NavLink>
-    </li>
-</ul>
 
+    <NavLink class="settings-nav-card data-nav" href="Account/Manage/PersonalData">
+        <span class="settings-nav-icon">🛡️</span>
+        <span class="settings-nav-text"><strong>Personal Data</strong><small>Manage your stored information</small></span>
+        <span class="settings-nav-arrow">›</span>
+    </NavLink>
+</div>
 @code {
     private bool hasExternalLogins;
 

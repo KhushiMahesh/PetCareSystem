@@ -44,6 +44,26 @@
             </p>
         </div>
 
+        <section class="pawberry-dashboard-pets mt-4 mb-4">
+            <h3>My Little Paws 🐾</h3>
+            <p class="text-muted">Meet your lovely companions!</p>
+            <div class="row g-3">
+                @foreach (var pet in OwnerPets)
+                {
+                    <div class="col-6 col-md-4 col-lg-3" @key="pet.PetId">
+                        <div class="pawberry-dashboard-pet-card h-100">
+                            <img src="@PetCareSystem.Web.Helpers.PetSpeciesIllustration.GetImagePath(pet.Species?.SpeciesName)" alt="@pet.Species?.SpeciesName" class="pawberry-dashboard-pet-image" />
+                            <h5>@pet.PetName</h5>
+                            <p>@pet.Species?.SpeciesName</p>
+                            @if (pet.Breed != null)
+                            {
+                                <small>@pet.Breed.BreedName</small>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </section>
         <div class="row g-4">
 
             <div class="col-md-4">
@@ -137,6 +157,7 @@
     private OwnerProfile? Owner;
     private string OwnerEmail = string.Empty;
     private int PetCount;
+    private List<Pet> OwnerPets = new();
     private bool IsLoading = true;
     private string? ErrorMessage;
 
@@ -168,6 +189,8 @@
 
             PetCount = await DbContext.Pets
                 .CountAsync(p => p.OwnerProfileId == Owner.OwnerProfileId);
+
+            OwnerPets = await DbContext.Pets.Include(p => p.Species).Include(p => p.Breed).Where(p => p.OwnerProfileId == Owner.OwnerProfileId).OrderBy(p => p.PetName).ToListAsync();
         }
         catch (Exception ex)
         {

@@ -53,7 +53,7 @@
             {
                 <div class="alert alert-success mt-3 mb-0">
                     <strong>Invoice Generated:</strong> @Invoices.First(i => i.AppointmentId == appointment.AppointmentId).InvoiceNumber
-                    â€” This appointment has already been billed.
+                    - This appointment has already been billed.
                 </div>
             }
             else
@@ -221,7 +221,7 @@
                         {
                             <tr>
                                 <td colspan="10">
-                                    <strong>Service Breakdown ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â @invoice.InvoiceNumber</strong>
+                                    <strong>Service Breakdown</strong>
                                     @if (InvoiceItemsByInvoice.TryGetValue(invoice.InvoiceId, out var items) && items.Count > 0)
                                     {
                                         <table class="table table-sm table-striped mt-2">

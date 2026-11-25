@@ -295,3 +295,361 @@ hr { border-color: var(--pawberry-border); opacity: 1; }
 .pawberry-vet-dashboard > .card {
     margin-bottom: 1.5rem !important;
 }
+/* Pawberry My Account Profile */
+.pawberry-profile {
+    max-width: 1050px;
+}
+
+.pawberry-profile .profile-welcome {
+    background: linear-gradient(115deg, #fce1eb, #dceeff);
+    border-radius: 22px;
+    padding: 30px 35px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 5px 18px rgba(80, 75, 120, 0.07);
+}
+
+.profile-eyebrow {
+    color: #a34470;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+}
+
+.profile-welcome h2 {
+    color: #493653;
+    font-weight: 750;
+    margin: 8px 0;
+}
+
+.profile-welcome p {
+    color: #665c75;
+    margin: 0;
+}
+
+.profile-avatar {
+    width: 75px;
+    height: 75px;
+    border-radius: 22px;
+    background: white;
+    display: grid;
+    place-items: center;
+    font-size: 36px;
+}
+
+.profile-card {
+    background: white;
+    border: 1px solid #f0e5ef;
+    border-radius: 20px;
+    padding: 30px;
+    max-width: 750px;
+    box-shadow: 0 5px 20px rgba(80, 75, 120, 0.06);
+}
+
+.profile-card-heading {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 28px;
+}
+
+.profile-heading-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 15px;
+    background: #e4f1ff;
+    color: #397db9;
+    display: grid;
+    place-items: center;
+    font-size: 23px;
+}
+
+.profile-card-heading h4 {
+    color: #493653;
+    font-weight: 700;
+    margin: 0 0 5px;
+}
+
+.profile-card-heading p {
+    color: #858096;
+    margin: 0;
+    font-size: 14px;
+}
+
+.profile-input {
+    border: 1px solid #dce5f2;
+    border-radius: 11px;
+    padding: 12px 15px;
+    min-height: 48px;
+}
+
+.profile-input:focus {
+    border-color: #91bce8;
+    box-shadow: 0 0 0 3px rgba(145, 188, 232, 0.2);
+}
+
+.profile-card .form-label {
+    color: #51445f;
+    font-weight: 600;
+}
+
+.profile-save-btn {
+    background: linear-gradient(100deg, #df8fb5, #79aee2);
+    color: white;
+    border: none;
+    border-radius: 11px;
+    padding: 12px 25px;
+    font-weight: 650;
+}
+
+.profile-save-btn:hover {
+    color: white;
+    filter: brightness(0.96);
+    transform: translateY(-1px);
+}
+
+.profile-note {
+    color: #668b83;
+    background: #e8f7f0;
+    border-radius: 12px;
+    padding: 15px 18px;
+    max-width: 750px;
+    font-size: 14px;
+}
+
+.profile-note i {
+    margin-right: 8px;
+}
+
+@media (max-width: 576px) {
+    .pawberry-profile .profile-welcome {
+        padding: 22px;
+    }
+
+    .profile-avatar {
+        width: 55px;
+        height: 55px;
+        font-size: 27px;
+    }
+
+    .profile-card {
+        padding: 20px;
+    }
+}
+
+/* Pawberry Account Settings Navigation */
+.pawberry-settings-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+    margin-bottom: 25px;
+}
+
+.settings-nav-card {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 16px 18px;
+    border: 1px solid #eee5f0;
+    border-radius: 16px;
+    background: white;
+    text-decoration: none;
+    color: #51445f !important;
+    transition: all .2s ease;
+}
+
+.settings-nav-card:hover {
+    transform: translateX(4px);
+    box-shadow: 0 5px 16px rgba(80, 60, 100, .08);
+}
+
+.settings-nav-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    font-size: 22px;
+    flex-shrink: 0;
+}
+
+.settings-nav-text {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.settings-nav-text strong {
+    font-size: 15px;
+    color: #493653;
+}
+
+.settings-nav-text small {
+    font-size: 12px;
+    color: #858096;
+}
+
+.settings-nav-arrow {
+    margin-left: auto;
+    font-size: 25px;
+    color: #a99bb2;
+}
+
+.profile-nav .settings-nav-icon { background: #fce5ef; }
+.email-nav .settings-nav-icon { background: #e2f0ff; }
+.password-nav .settings-nav-icon { background: #eee8ff; }
+.external-nav .settings-nav-icon { background: #e4f7ee; }
+.data-nav .settings-nav-icon { background: #fff0df; }
+
+.settings-nav-card.active {
+    border-color: #df9fbe;
+    background: linear-gradient(110deg, #fff4f8, #f1f7ff);
+    box-shadow: 0 4px 14px rgba(180, 120, 160, .09);
+}
+
+.settings-nav-card.active .settings-nav-arrow {
+    color: #bd6e98;
+}
+
+@media (max-width: 576px) {
+    .settings-nav-card {
+        padding: 13px;
+    }
+}
+
+/* Pawberry Email Settings */
+.pawberry-email-card {
+    max-width: 750px;
+}
+
+.email-current-box {
+    background: linear-gradient(110deg, #fff3f8, #f0f7ff);
+    border: 1px solid #f0e1ed;
+    border-radius: 16px;
+    padding: 20px;
+}
+
+.email-current-box .form-label {
+    color: #51445f;
+    font-weight: 650;
+}
+
+.email-status {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 5px 11px;
+    border-radius: 20px;
+    margin-bottom: 12px;
+}
+
+.email-status.verified {
+    color: #267b58;
+    background: #dcf5e9;
+}
+
+.email-status.pending {
+    color: #a66b27;
+    background: #fff0d8;
+}
+
+.pawberry-email-page .btn-link {
+    color: #a94f80;
+    font-weight: 650;
+    text-decoration: none;
+}
+
+.pawberry-email-page .btn-link:hover {
+    color: #397db9;
+    text-decoration: underline;
+}
+
+.pawberry-email-page .profile-save-btn {
+    width: auto;
+}
+
+
+/* Pawberry Personal Data */
+.pawberry-delete-card {
+    border-color: #f2dada;
+}
+
+.pawberry-delete-icon {
+    background: #ffe8e8;
+    color: #c44c55;
+}
+
+.pawberry-delete-warning {
+    background: #fff2f1;
+    border: 1px solid #f4d5d2;
+    border-radius: 12px;
+    padding: 16px;
+    color: #984c4c;
+}
+
+.pawberry-delete-warning p {
+    margin-top: 6px;
+    font-size: 14px;
+}
+
+
+/* Pawberry species illustrations */
+.pawberry-pet-illustration {
+    display: block;
+    width: 150px;
+    height: 135px;
+    object-fit: contain;
+    margin: 0 auto 18px;
+    padding: 8px;
+    border-radius: 22px;
+    background: linear-gradient(135deg, #fff0f5, #eaf5ff);
+}
+
+/* Pawberry dashboard pet collection */
+.pawberry-dashboard-pets {
+    padding: 22px;
+    border-radius: 22px;
+    background: linear-gradient(135deg, #fff5f8, #f0f7ff);
+}
+.pawberry-dashboard-pets h3 {
+    color: #713b64;
+    font-weight: 700;
+}
+.pawberry-dashboard-pet-card {
+    text-align: center;
+    padding: 18px 12px;
+    border-radius: 20px;
+    background: #fff;
+    border: 1px solid #f4dce9;
+    box-shadow: 0 4px 14px rgba(100,80,110,.07);
+    transition: transform .2s ease, box-shadow .2s ease;
+}
+.pawberry-dashboard-pet-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(100,80,110,.13);
+}
+.pawberry-dashboard-pet-image {
+    width: 125px;
+    height: 115px;
+    object-fit: contain;
+    margin-bottom: 10px;
+}
+.pawberry-dashboard-pet-card h5 {
+    color: #49364e;
+    font-weight: 700;
+}
+.pawberry-dashboard-pet-card p {
+    color: #647da3;
+    margin-bottom: 3px;
+}
+.pawberry-dashboard-pet-card small {
+    color: #94758f;
+}
+@media (max-width: 576px) {
+    .pawberry-dashboard-pets { padding: 14px; }
+    .pawberry-dashboard-pet-image {
+        width: 100px;
+        height: 95px;
+    }
+}
