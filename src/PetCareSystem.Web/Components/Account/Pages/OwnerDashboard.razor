@@ -1,0 +1,183 @@
+@page "/owner/dashboard"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "PetOwner")]
+
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using PetCareSystem.Web.Data
+@using PetCareSystem.Web.Models
+
+@inject UserManager<ApplicationUser> UserManager
+@inject ApplicationDbContext DbContext
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ILogger<OwnerDashboard> Logger
+
+<PageTitle>Pet Owner Dashboard | PetCareSystem</PageTitle>
+
+<div class="container py-4">
+
+    @if (IsLoading)
+    {
+        <div class="text-center py-5">
+            <p>Loading your dashboard...</p>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <div class="alert alert-danger">
+            @ErrorMessage
+        </div>
+    }
+    else if (Owner == null)
+    {
+        <div class="alert alert-warning">
+            Your owner profile could not be found.
+            Please contact the administrator.
+        </div>
+    }
+    else
+    {
+        <div class="mb-4">
+            <h2>Welcome, @Owner.FullName!</h2>
+            <p class="text-muted">
+                Manage your pets and keep track of their healthcare.
+            </p>
+        </div>
+
+        <div class="row g-4">
+
+            <div class="col-md-4">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body">
+                        <h5>My Pets</h5>
+                        <h2>@PetCount</h2>
+                        <p class="text-muted">Registered pets</p>
+
+                        <a href="/owner/pets" class="btn btn-primary">
+                            Manage Pets
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body">
+                        <h5>Appointments</h5>
+                        <p class="text-muted">
+                            Book and manage veterinary appointments.
+                        </p>
+
+                        <a href="/owner/appointments"
+                           class="btn btn-outline-primary">
+                            View Appointments
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body">
+                        <h5>Medical Records</h5>
+                        <p class="text-muted">
+                            Keep track of your pets' medical history.
+                        </p>
+
+                        <a href="/owner/medical-records"
+                           class="btn btn-outline-primary">
+                            View Records
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body">
+                        <h5>Emergency Case History</h5>
+                        <p class="text-muted">
+                            Track emergency visits, treatment status and assigned veterinarians.
+                        </p>
+                        <a href="/owner/emergency-cases" class="btn btn-outline-danger">
+                            View Emergency History
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body">
+                        <h5>My Invoices</h5>
+                        <p class="text-muted">
+                            View your veterinary bills, payment history and outstanding balances.
+                        </p>
+                        <a href="/owner/invoices" class="btn btn-outline-primary">
+                            View Invoices
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <div class="card shadow-sm border-0 mt-4">
+            <div class="card-body">
+                <h5>Account Information</h5>
+
+                <p><strong>Name:</strong> @Owner.FullName</p>
+                <p><strong>Email:</strong> @OwnerEmail</p>
+                <p><strong>City:</strong> @(Owner.City ?? "Not provided")</p>
+            </div>
+        </div>
+    }
+
+</div>
+
+@code {
+    private OwnerProfile? Owner;
+    private string OwnerEmail = string.Empty;
+    private int PetCount;
+    private bool IsLoading = true;
+    private string? ErrorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var authState =
+                await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+            var user = await UserManager.GetUserAsync(authState.User);
+
+            if (user == null)
+            {
+                ErrorMessage = "Your login session could not be verified. Please log in again.";
+                return;
+            }
+
+            OwnerEmail = user.Email ?? string.Empty;
+
+            Owner = await DbContext.OwnerProfiles
+                .FirstOrDefaultAsync(o => o.UserId == user.Id);
+
+            if (Owner == null)
+            {
+                ErrorMessage = "Your Pet Owner profile was not found in the database.";
+                return;
+            }
+
+            PetCount = await DbContext.Pets
+                .CountAsync(p => p.OwnerProfileId == Owner.OwnerProfileId);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading Pet Owner dashboard.");
+
+            ErrorMessage = "Something went wrong while loading your dashboard. Please try again.";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+}

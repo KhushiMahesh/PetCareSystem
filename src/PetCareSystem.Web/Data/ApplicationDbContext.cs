@@ -44,6 +44,8 @@ public class ApplicationDbContext(
     public DbSet<PrescriptionItem> PrescriptionItems => Set<PrescriptionItem>();
     public DbSet<Vaccine> Vaccines => Set<Vaccine>();
     public DbSet<VaccinationRecord> VaccinationRecords => Set<VaccinationRecord>();
+    public DbSet<VaccinationScheduleTemplate> VaccinationScheduleTemplates => Set<VaccinationScheduleTemplate>();
+    public DbSet<PetVaccinationSchedule> PetVaccinationSchedules => Set<PetVaccinationSchedule>();
 
     // Billing management
     public DbSet<Invoice> Invoices => Set<Invoice>();
@@ -376,6 +378,13 @@ public class ApplicationDbContext(
             .HasForeignKey(v => v.SpeciesId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.Entity<Vaccine>()
+            .HasOne(v => v.ApprovedByVeterinarian)
+            .WithMany()
+            .HasForeignKey(v => v.ApprovedByVeterinarianProfileId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
+
 
         // ==========================================
         // 19. VACCINATION RECORDS
@@ -401,6 +410,59 @@ public class ApplicationDbContext(
 
 
         // ==========================================
+        builder.Entity<VaccinationRecord>()
+            .HasOne(v => v.PetVaccinationSchedule)
+            .WithOne(s => s.VaccinationRecord)
+            .HasForeignKey<VaccinationRecord>(v => v.PetVaccinationScheduleId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // ==========================================
+        // 20. VACCINATION SCHEDULE TEMPLATES
+        // ==========================================
+
+        builder.Entity<VaccinationScheduleTemplate>()
+            .HasOne(t => t.Species)
+            .WithMany()
+            .HasForeignKey(t => t.SpeciesId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<VaccinationScheduleTemplate>()
+            .HasOne(t => t.Vaccine)
+            .WithMany()
+            .HasForeignKey(t => t.VaccineId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<VaccinationScheduleTemplate>()
+            .HasOne(t => t.ApprovedByVeterinarian)
+            .WithMany()
+            .HasForeignKey(t => t.ApprovedByVeterinarianProfileId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // ==========================================
+        // 21. PET VACCINATION SCHEDULES
+        // ==========================================
+
+        builder.Entity<PetVaccinationSchedule>()
+            .HasOne(s => s.Pet)
+            .WithMany()
+            .HasForeignKey(s => s.PetId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<PetVaccinationSchedule>()
+            .HasOne(s => s.Template)
+            .WithMany()
+            .HasForeignKey(s => s.VaccinationScheduleTemplateId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<PetVaccinationSchedule>()
+            .HasIndex(s => new
+            {
+                s.PetId,
+                s.VaccinationScheduleTemplateId
+            })
+            .IsUnique();
         // 20. INVOICES
         // ==========================================
 

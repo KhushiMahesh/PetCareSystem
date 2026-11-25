@@ -1,3 +1,4 @@
+﻿
 using Microsoft.EntityFrameworkCore;
 using PetCareSystem.Web.Models;
 
@@ -204,7 +205,94 @@ public static class DbInitializer
         await context.SaveChangesAsync();
 
 
-        // 4. ANIMAL BREEDS
+        // 4. VACCINE CATALOGUE
+
+        var vaccineData = new[]
+        {
+            // DOG VACCINES
+
+            (
+                Species: "Dog",
+                Name: "Canine DHPPi",
+                Description: "Combination vaccine covering canine distemper, hepatitis, parvovirus and parainfluenza.",
+                RecommendedAge: "Usually starts at 6-8 weeks, subject to veterinary assessment.",
+                RecommendedInterval: "Initial series and boosters as prescribed by veterinarian."
+            ),
+
+            (
+                Species: "Dog",
+                Name: "Rabies",
+                Description: "Vaccine for prevention of rabies in dogs.",
+                RecommendedAge: "As per applicable vaccination guidelines.",
+                RecommendedInterval: "As per vaccine label and veterinarian's recommendation."
+            ),
+
+            (
+                Species: "Dog",
+                Name: "Leptospirosis",
+                Description: "Vaccine for protection against leptospirosis.",
+                RecommendedAge: "Based on veterinary assessment and regional risk.",
+                RecommendedInterval: "As per vaccine label and veterinarian's recommendation."
+            ),
+
+            // CAT VACCINES
+
+            (
+                Species: "Cat",
+                Name: "Feline FVRCP",
+                Description: "Combination vaccine covering feline viral rhinotracheitis, calicivirus and panleukopenia.",
+                RecommendedAge: "Usually starts at 6-8 weeks, subject to veterinary assessment.",
+                RecommendedInterval: "Initial series and boosters as prescribed by veterinarian."
+            ),
+
+            (
+                Species: "Cat",
+                Name: "Rabies",
+                Description: "Vaccine for prevention of rabies in cats.",
+                RecommendedAge: "As per applicable vaccination guidelines.",
+                RecommendedInterval: "As per vaccine label and veterinarian's recommendation."
+            ),
+
+            (
+                Species: "Cat",
+                Name: "Feline Leukemia (FeLV)",
+                Description: "Vaccine for prevention of feline leukemia virus infection.",
+                RecommendedAge: "Based on veterinary assessment and risk.",
+                RecommendedInterval: "As per vaccine label and veterinarian's recommendation."
+            )
+        };
+
+        foreach (var item in vaccineData)
+        {
+            var species = await context.Species
+                .FirstAsync(s => s.SpeciesName == item.Species);
+
+            if (!await context.Vaccines.AnyAsync(v =>
+                v.SpeciesId == species.SpeciesId &&
+                v.VaccineName == item.Name))
+            {
+                context.Vaccines.Add(new Vaccine
+                {
+                    VaccineName = item.Name,
+                    SpeciesId = species.SpeciesId,
+                    Description = item.Description,
+                    RecommendedAge = item.RecommendedAge,
+                    RecommendedInterval = item.RecommendedInterval,
+                    IsActive = true
+                });
+            }
+        }
+
+        await context.SaveChangesAsync();
+
+
+        // 4A. RESEARCHED VACCINE CATALOGUE
+        await VaccineCatalogueSeeder.SeedAsync(context);
+        await AdditionalVaccineCatalogueSeeder.SeedAsync(context);
+            await VaccinationScheduleTemplateSeeder.SeedAsync(context);
+
+
+        // 5. ANIMAL BREEDS
 
         var breedData = new Dictionary<string, string[]>
         {
@@ -403,7 +491,7 @@ public static class DbInitializer
         await context.SaveChangesAsync();
 
 
-        // 5. HOSPITAL SERVICES
+        // 6. HOSPITAL SERVICES
 
         var services = new (string Name, string Description, decimal Price)[]
         {
@@ -471,3 +559,5 @@ public static class DbInitializer
         await context.SaveChangesAsync();
     }
 }
+
+

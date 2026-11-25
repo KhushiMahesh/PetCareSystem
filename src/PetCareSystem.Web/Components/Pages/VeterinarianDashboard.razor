@@ -1,0 +1,1437 @@
+```razor
+@page "/doctor/dashboard"
+
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Veterinarian")]
+
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using PetCareSystem.Web.Data
+@using PetCareSystem.Web.Models
+
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ApplicationDbContext DbContext
+@inject ILogger<VeterinarianDashboard> Logger
+
+<PageTitle>Veterinarian Dashboard</PageTitle>
+
+<div class="container-fluid py-4">
+
+    @if (IsLoading)
+    {
+        <p>Loading veterinarian dashboard...</p>
+    }
+    else if (Veterinarian is null)
+    {
+        <div class="alert alert-danger">
+            Veterinarian profile could not be found.
+        </div>
+    }
+    else
+    {
+        <div class="mb-4">
+            <h2>Welcome, @Veterinarian.FullName</h2>
+            <p class="text-muted">
+                Doctor ID: @DoctorId |
+                @Veterinarian.Qualification
+            </p>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Message))
+        {
+            <div class="alert alert-info">@Message</div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+        {
+            <div class="alert alert-danger">@ErrorMessage</div>
+        }
+
+        <div class="mb-4">
+    <a href="/doctor/billing" class="btn btn-primary me-2">Billing Management</a>
+<a href="/doctor/emergencies" class="btn btn-danger">Emergency Case Management</a>
+</div>
+<div class="row g-3 mb-4">
+
+            <div class="col-md-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-muted">Today's Appointments</h6>
+                        <h2>@TodayAppointments.Count</h2>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-muted">Upcoming Appointments</h6>
+                        <h2>@UpcomingAppointments.Count</h2>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-muted">Completed Consultations</h6>
+                        <h2>@CompletedCount</h2>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5>My Profile</h5>
+
+                <p><strong>Doctor ID:</strong> @DoctorId</p>
+                <p><strong>Name:</strong> @Veterinarian.FullName</p>
+                <p><strong>Qualification:</strong> @Veterinarian.Qualification</p>
+                <p><strong>Registration Number:</strong> @Veterinarian.ProfessionalRegistrationNumber</p>
+                <p><strong>Consultation Fee:</strong> â‚¹@Veterinarian.ConsultationFee</p>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h4 class="mb-3">Today's Appointments</h4>
+
+                @if (TodayAppointments.Count == 0)
+                {
+                    <p class="text-muted">No appointments scheduled for today.</p>
+                }
+                else
+                {
+                    @AppointmentTable(TodayAppointments)
+                }
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h4 class="mb-3">Upcoming Appointments</h4>
+
+                @if (UpcomingAppointments.Count == 0)
+                {
+                    <p class="text-muted">No upcoming appointments.</p>
+                }
+                else
+                {
+                    @AppointmentTable(UpcomingAppointments)
+                }
+            </div>
+        </div>
+
+        @if (SelectedAppointment is not null)
+        {
+            <div class="card shadow-sm mb-4" id="appointment-details">
+                <div class="card-body">
+
+                    <h4 class="mb-3">Appointment Details</h4>
+
+                    <h5>Appointment Information</h5>
+
+                    <p>
+                        <strong>Appointment ID:</strong>
+                        @SelectedAppointment.AppointmentId
+                    </p>
+
+                    <p>
+                        <strong>Date:</strong>
+                        @IndiaTime(SelectedAppointment.StartDateTime).ToString("dd MMM yyyy")
+                    </p>
+
+                    <p>
+                        <strong>Time:</strong>
+                        @IndiaTime(SelectedAppointment.StartDateTime).ToString("hh:mm tt")
+                    </p>
+
+                    <p>
+                        <strong>Specialisation:</strong>
+                        @(SelectedAppointment.Specialisation?.SpecialisationName ?? "General")
+                    </p>
+
+                    <p>
+                        <strong>Reason:</strong>
+                        @(SelectedAppointment.Reason ?? "Not provided")
+                    </p>
+
+                    <p>
+                        <strong>Status:</strong>
+                        <span class="badge bg-info">
+                            @SelectedAppointment.Status
+                        </span>
+                    </p>
+
+                    <hr />
+
+                    <h5>Pet Information</h5>
+
+                    <p><strong>Name:</strong> @SelectedAppointment.Pet.PetName</p>
+
+                    <p>
+                        <strong>Species:</strong>
+                        @SelectedAppointment.Pet.Species.SpeciesName
+                    </p>
+
+                    <p>
+                        <strong>Breed:</strong>
+                        @(SelectedAppointment.Pet.Breed?.BreedName ?? "Not specified")
+                    </p>
+
+                    <p>
+                        <strong>Gender:</strong>
+                        @(SelectedAppointment.Pet.Gender ?? "Not specified")
+                    </p>
+
+                    <p>
+                        <strong>Date of Birth:</strong>
+                        @(SelectedAppointment.Pet.DateOfBirth?.ToString("dd MMM yyyy") ?? "Not specified")
+                    </p>
+
+                    <p>
+                        <strong>Weight:</strong>
+                        @(SelectedAppointment.Pet.Weight?.ToString() ?? "Not specified")
+                    </p>
+
+                    <p>
+                        <strong>Colour:</strong>
+                        @(SelectedAppointment.Pet.Colour ?? "Not specified")
+                    </p>
+
+                    <p>
+                        <strong>Existing Medical Notes:</strong>
+                        @(SelectedAppointment.Pet.MedicalNotes ?? "No notes available")
+                    </p>
+
+                    <hr />
+
+                    <h5>Owner Information</h5>
+
+                    <p>
+                        <strong>Name:</strong>
+                        @SelectedAppointment.Owner.FullName
+                    </p>
+
+                    <p>
+                        <strong>Email:</strong>
+                        @(OwnerEmail ?? "Not available")
+                    </p>
+
+                    <p>
+                        <strong>Phone:</strong>
+                        @(OwnerPhone ?? "Not available")
+                    </p>
+
+                    <p>
+                        <strong>Address:</strong>
+                        @(SelectedAppointment.Owner.Address ?? "Not provided")
+                    </p>
+
+                    <hr />
+
+                    <h5>Previous Medical Records</h5>
+
+                    @if (SelectedPetMedicalRecords.Count == 0)
+                    {
+                        <p class="text-muted">
+                            No previous medical records available.
+                        </p>
+                    }
+                    else
+                    {
+                        @foreach (var record in SelectedPetMedicalRecords)
+                        {
+                            <div class="border rounded p-3 mb-3">
+
+                                <p>
+                                    <strong>Record Date:</strong>
+                                    @IndiaTime(record.RecordDate).ToString("dd MMM yyyy hh:mm tt")
+                                </p>
+
+                                <p>
+                                    <strong>Veterinarian:</strong>
+                                    @record.Veterinarian.FullName
+                                </p>
+
+                                <p>
+                                    <strong>Symptoms:</strong>
+                                    @record.Symptoms
+                                </p>
+
+                                <p>
+                                    <strong>Diagnosis:</strong>
+                                    @record.Diagnosis
+                                </p>
+
+                                <p>
+                                    <strong>Treatment:</strong>
+                                    @(record.TreatmentNotes ?? "Not available")
+                                </p>
+
+                                <p>
+                                    <strong>Follow-up:</strong>
+                                    @(record.FollowUpInstructions ?? "Not available")
+                                </p>
+
+                            </div>
+                        }
+                    }
+
+                    <hr />
+
+                    <h5>Write Medical Record</h5>
+
+                    @if (SelectedAppointment.Status != "Cancelled"
+                         && SelectedAppointment.Status != "Canceled")
+                    {
+                        <div class="mb-3">
+                            <label class="form-label">Symptoms *</label>
+                            <textarea class="form-control"
+                                      rows="3"
+                                      @bind="RecordSymptoms"
+                                      placeholder="Describe the symptoms observed..."></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Diagnosis *</label>
+                            <textarea class="form-control"
+                                      rows="3"
+                                      @bind="RecordDiagnosis"
+                                      placeholder="Enter the diagnosis..."></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Treatment and Medication Notes</label>
+                            <textarea class="form-control"
+                                      rows="3"
+                                      @bind="RecordTreatmentNotes"
+                                      placeholder="Enter treatment and medication details..."></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Follow-up Instructions</label>
+                            <textarea class="form-control"
+                                      rows="3"
+                                      @bind="RecordFollowUp"
+                                      placeholder="Enter follow-up instructions..."></textarea>
+                        </div>
+
+                        <button class="btn btn-primary"
+                                disabled="@IsSavingRecord"
+                                @onclick="SaveMedicalRecordAsync">
+                            @(IsSavingRecord ? "Saving..." : "Save Medical Record")
+                        </button>
+                    }
+                    else
+                    {
+                        <p class="text-muted">
+                            Medical records cannot be added to a cancelled appointment.
+                        </p>
+                    }
+
+                    <hr />
+
+                    <!-- Vaccination History -->
+
+                    <h5>Vaccination History</h5>
+
+                    @if (SelectedPetVaccinationRecords.Count == 0)
+                    {
+                        <p class="text-muted">
+                            No previous vaccination records available for this pet.
+                        </p>
+                    }
+                    else
+                    {
+                        @foreach (var vaccination in SelectedPetVaccinationRecords)
+                        {
+                            <div class="border rounded p-3 mb-3">
+
+                                <p>
+                                    <strong>Vaccine:</strong>
+                                    @vaccination.Vaccine.VaccineName
+                                </p>
+
+                                <p>
+                                    <strong>Dose:</strong>
+                                    @(vaccination.DoseName ?? "Not recorded")
+                                </p>
+
+                                <p>
+                                    <strong>Vaccination Date:</strong>
+                                    @vaccination.VaccinationDate.ToString("dd MMM yyyy")
+                                </p>
+
+                                <p>
+                                    <strong>Next Due Date:</strong>
+                                    @(vaccination.NextDueDate?.ToString("dd MMM yyyy") ?? "Not specified")
+                                </p>
+
+                                <p>
+                                    <strong>Batch Number:</strong>
+                                    @(vaccination.BatchNumber ?? "Not provided")
+                                </p>
+
+                                <p>
+                                    <strong>Veterinarian:</strong>
+                                    @vaccination.Veterinarian.FullName
+                                </p>
+
+                                <p>
+                                    <strong>Notes:</strong>
+                                    @(vaccination.Notes ?? "None")
+                                </p>
+
+                            </div>
+                        }
+                    }
+
+                    <hr />
+
+                    <!-- Record Vaccination -->
+
+                    <h5>Record Vaccination</h5>
+
+                    @if (SelectedAppointment.Status != "Cancelled"
+                         && SelectedAppointment.Status != "Canceled")
+                    {
+                        @if (AvailableVaccines.Count == 0)
+                        {
+                            <div class="alert alert-warning">
+                                No active vaccines are currently available for
+                                @SelectedAppointment.Pet.Species.SpeciesName.
+                            </div>
+                        }
+                        else
+                        {
+                                                        <h5>Patient Vaccination Assessment</h5>
+
+                            @if (SelectedAppointment?.Pet is not null)
+                            {
+                                <div class="alert alert-info">
+                                    <strong>@SelectedAppointment.Pet.PetName</strong><br />
+                                    Species: @SelectedAppointment.Pet.Species.SpeciesName<br />
+                                    Breed: @(SelectedAppointment.Pet.Breed?.BreedName ?? "Not recorded")<br />
+                                    Age: @GetSelectedPetAge()<br />
+                                    Gender: @(SelectedAppointment.Pet.Gender ?? "Not recorded")<br />
+                                    Weight: @(SelectedAppointment.Pet.Weight.HasValue
+                                        ? SelectedAppointment.Pet.Weight.Value + " kg"
+                                        : "Not recorded")<br />
+                                    Medical notes: @(SelectedAppointment.Pet.MedicalNotes ?? "None recorded")
+                                </div>
+                            }
+
+                            <h6>Species-Matched Vaccines and Recommendations</h6>
+
+                            @if (AvailableVaccines.Count == 0)
+                            {
+                                <div class="alert alert-warning">
+                                    No vaccine catalogue entries are available for this species.
+                                </div>
+                            }
+                            else
+                            {
+                                @foreach (var vaccine in AvailableVaccines)
+                                {
+                                    var previousDose = SelectedPetVaccinationRecords
+                                        .Where(r => r.VaccineId == vaccine.VaccineId)
+                                        .OrderByDescending(r => r.VaccinationDate)
+                                        .FirstOrDefault();
+
+                                    <div class="card mb-3">
+                                        <div class="card-body">
+                                            <h6>@vaccine.VaccineName</h6>
+
+                                            <p>
+                                                <strong>Protects against:</strong>
+                                                @(vaccine.DiseasePrevented ?? "Information unavailable")
+                                            </p>
+
+                                            <p>
+                                                <strong>Description:</strong>
+                                                @(vaccine.Description ?? "Information unavailable")
+                                            </p>
+
+                                            <p>
+                                                <strong>Recommended age:</strong>
+                                                @(vaccine.RecommendedAge ?? "Unavailable â€” veterinarian verification required")
+                                            </p>
+
+                                            <p>
+                                                <strong>Recommended dose:</strong>
+                                                @(vaccine.RecommendedDose ?? "Unavailable â€” check product label")
+                                            </p>
+
+                                            <p>
+                                                <strong>Administration route:</strong>
+                                                @(vaccine.AdministrationRoute ?? "Not verified")
+                                            </p>
+
+                                            <p>
+                                                <strong>Recommended interval:</strong>
+                                                @(vaccine.RecommendedInterval ?? "Unavailable â€” veterinarian verification required")
+                                            </p>
+
+                                            <hr />
+
+                                            <strong>Vaccination History</strong>
+
+                                            @if (previousDose is not null)
+                                            {
+                                                <p>
+                                                    Last vaccination:
+                                                    @previousDose.VaccinationDate.ToString("dd MMM yyyy")
+                                                </p>
+                                                <p>
+                                                    Next due:
+                                                    @(previousDose.NextDueDate?.ToString("dd MMM yyyy") ?? "Not recorded")
+                                                </p>
+                                            }
+                                            else
+                                            {
+                                                <p>No previous vaccination record found.</p>
+                                            }
+
+                                            <p>
+                                                <strong>Catalogue review:</strong>
+                                                @vaccine.ReviewStatus
+                                            </p>
+
+                                            <p>
+                                                <strong>Verification:</strong>
+                                                @vaccine.VerificationStatus
+                                            </p>
+
+                                            @if (!string.IsNullOrWhiteSpace(vaccine.SourceName))
+                                            {
+                                                <p>
+                                                    <strong>Research source:</strong>
+                                                    @vaccine.SourceName
+                                                </p>
+                                            }
+
+                                            @if (!string.IsNullOrWhiteSpace(vaccine.SourceReference))
+                                            {
+                                                <p>
+                                                    <a href="@vaccine.SourceReference"
+                                                       target="_blank"
+                                                       rel="noopener noreferrer">
+                                                        View research reference
+                                                    </a>
+                                                </p>
+                                            }
+
+                                            <button type="button"
+                                                    class="btn btn-outline-primary"
+                                                    @onclick="() => SelectRecommendedVaccine(vaccine.VaccineId)">
+                                                Select for Vaccination
+                                            </button>
+
+                                            @if (SelectedVaccineId == vaccine.VaccineId)
+                                            {
+                                                <span class="badge bg-success ms-2">Selected</span>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            }
+
+                            <div class="mb-3">
+                                <label class="form-label">Selected Vaccine</label>
+                                <input class="form-control"
+                                       value="@(AvailableVaccines.FirstOrDefault(v => v.VaccineId == SelectedVaccineId)?.VaccineName ?? "Select a vaccine above")"
+                                       readonly />
+                            </div>
+<div class="mb-3">
+                                <label class="form-label">Dose *</label>
+                                <select class="form-select" @bind="DoseName">
+                                    <option value="">Select dose</option>
+                                    <option value="First Dose">First Dose</option>
+                                    <option value="Second Dose">Second Dose</option>
+                                    <option value="Third Dose">Third Dose</option>
+                                    <option value="Booster Dose">Booster Dose</option>
+                                    <option value="Annual Booster">Annual Booster</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+<div class="mb-3">
+                                <label class="form-label">Vaccination Date *</label>
+
+                                <input type="date"
+                                       class="form-control"
+                                       @bind="VaccinationDate" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Next Due Date</label>
+
+                                <input type="date"
+                                       class="form-control"
+                                       @bind="NextDueDate" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Batch Number</label>
+
+                                <input type="text"
+                                       class="form-control"
+                                       @bind="VaccinationBatchNumber"
+                                       placeholder="Enter vaccine batch number" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Notes</label>
+
+                                <textarea class="form-control"
+                                          rows="3"
+                                          @bind="VaccinationNotes"
+                                          placeholder="Enter vaccination notes..."></textarea>
+                            </div>
+
+                            <button class="btn btn-success"
+                                    disabled="@IsSavingVaccination"
+                                    @onclick="SaveVaccinationAsync">
+                                @(IsSavingVaccination ? "Saving..." : "Save Vaccination")
+                            </button>
+                        }
+                    }
+                    else
+                    {
+                        <p class="text-muted">
+                            Vaccinations cannot be recorded for a cancelled appointment.
+                        </p>
+                    }
+
+                    <hr />
+
+                    <h5>Update Appointment Status</h5>
+
+                    @if (SelectedAppointment.Status != "Completed"
+                         && SelectedAppointment.Status != "Cancelled"
+                         && SelectedAppointment.Status != "Canceled")
+                    {
+                        <div class="d-flex gap-2">
+
+                            <button class="btn btn-success"
+                                    disabled="@IsUpdating"
+                                    @onclick="MarkSelectedAppointmentCompleted">
+                                Mark Completed
+                            </button>
+
+                            <button class="btn btn-danger"
+                                    disabled="@IsUpdating"
+                                    @onclick="CancelSelectedAppointment">
+                                Cancel Appointment
+                            </button>
+
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted">
+                            This appointment is already @SelectedAppointment.Status.
+                        </p>
+                    }
+
+                    <hr />
+
+                    <h5>Appointment Status History</h5>
+
+                    @if (SelectedAppointmentHistory.Count == 0)
+                    {
+                        <p class="text-muted">No status history available.</p>
+                    }
+                    else
+                    {
+                        @foreach (var history in SelectedAppointmentHistory)
+                        {
+                            <div class="border-bottom py-2">
+                                <strong>@history.NewStatus</strong>
+                                <br />
+
+                                <small class="text-muted">
+                                    @IndiaTime(history.ChangedAt).ToString("dd MMM yyyy hh:mm tt")
+                                </small>
+
+                                @if (!string.IsNullOrWhiteSpace(history.Remarks))
+                                {
+                                    <p class="mb-0">@history.Remarks</p>
+                                }
+                            </div>
+                        }
+                    }
+
+                    <button class="btn btn-secondary mt-3"
+                            @onclick="CloseAppointmentDetails">
+                        Close Details
+                    </button>
+
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+
+    private VeterinarianProfile? Veterinarian;
+
+    private List<Appointment> AllAppointments = new();
+
+    private List<Appointment> TodayAppointments = new();
+
+    private List<Appointment> UpcomingAppointments = new();
+
+    private Appointment? SelectedAppointment;
+
+    private List<MedicalRecord> SelectedPetMedicalRecords = new();
+
+    private List<AppointmentStatusHistory> SelectedAppointmentHistory = new();
+
+    // Vaccination management
+
+    private List<Vaccine> AvailableVaccines = new();
+
+    private List<VaccinationRecord> SelectedPetVaccinationRecords = new();
+    private List<PetVaccinationSchedule> AvailableVaccinationSchedules = new();
+    private int SelectedPetVaccinationScheduleId;
+
+    private int SelectedVaccineId;
+
+    private DateOnly VaccinationDate = DateOnly.FromDateTime(DateTime.Today);
+
+    private DateOnly? NextDueDate;
+
+    private string DoseName = string.Empty;
+
+    private string VaccinationBatchNumber = string.Empty;
+
+    private string VaccinationNotes = string.Empty;
+
+    private bool IsSavingVaccination;
+
+    private Dictionary<string, ApplicationUser> OwnerUsers = new();
+
+    private string DoctorId = string.Empty;
+
+    private string? OwnerEmail;
+
+    private string? OwnerPhone;
+
+    private string? Message;
+
+    private string? ErrorMessage;
+
+    private bool IsLoading = true;
+
+    private string RecordSymptoms = string.Empty;
+
+    private string RecordDiagnosis = string.Empty;
+
+    private string RecordTreatmentNotes = string.Empty;
+
+    private string RecordFollowUp = string.Empty;
+
+    private bool IsSavingRecord;
+
+    private bool IsUpdating;
+
+    private int CompletedCount;
+
+    private TimeZoneInfo IndiaTimeZone = GetIndiaTimeZone();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDashboardAsync();
+    }
+
+    private async Task LoadDashboardAsync()
+    {
+        try
+        {
+            IsLoading = true;
+
+            var authenticationState =
+                await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+            var currentUser = await UserManager.GetUserAsync(
+                authenticationState.User);
+
+            if (currentUser is null)
+            {
+                ErrorMessage = "Unable to identify the logged-in doctor.";
+                return;
+            }
+
+            DoctorId = currentUser.UserName ?? string.Empty;
+
+            Veterinarian = await DbContext.VeterinarianProfiles
+                .FirstOrDefaultAsync(v => v.UserId == currentUser.Id);
+
+            if (Veterinarian is null)
+            {
+                ErrorMessage = "No veterinarian profile is linked to this account.";
+                return;
+            }
+
+            await LoadAppointmentsAsync();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "Unable to load dashboard: " + ex.Message;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task LoadAppointmentsAsync()
+    {
+        if (Veterinarian is null)
+            return;
+
+        AllAppointments = await DbContext.Appointments
+            .AsNoTracking()
+            .Include(a => a.Pet)
+                .ThenInclude(p => p.Species)
+            .Include(a => a.Pet)
+                .ThenInclude(p => p.Breed)
+            .Include(a => a.Owner)
+            .Include(a => a.Specialisation)
+            .Where(a => a.VeterinarianProfileId ==
+                        Veterinarian.VeterinarianProfileId)
+            .OrderBy(a => a.StartDateTime)
+            .ToListAsync();
+
+        var now = DateTime.UtcNow;
+
+        var indiaNow = IndiaTime(now);
+
+        var today = DateOnly.FromDateTime(indiaNow);
+
+        TodayAppointments = AllAppointments
+            .Where(a =>
+                DateOnly.FromDateTime(IndiaTime(a.StartDateTime)) == today)
+            .OrderBy(a => a.StartDateTime)
+            .ToList();
+
+        UpcomingAppointments = AllAppointments
+            .Where(a =>
+                a.StartDateTime > now &&
+                a.Status != "Cancelled" &&
+                a.Status != "Canceled" &&
+                a.Status != "Completed")
+            .OrderBy(a => a.StartDateTime)
+            .ToList();
+
+        CompletedCount = AllAppointments.Count(a =>
+            a.Status == "Completed");
+
+        var ownerUserIds = AllAppointments
+            .Select(a => a.Owner.UserId)
+            .Distinct()
+            .ToList();
+
+        OwnerUsers = await DbContext.Users
+            .Where(u => ownerUserIds.Contains(u.Id))
+            .ToDictionaryAsync(u => u.Id);
+    }
+
+    private RenderFragment AppointmentTable(List<Appointment> appointments)
+    {
+        return @<div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle">
+
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Pet</th>
+                        <th>Owner</th>
+                        <th>Specialisation</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach (var appointment in appointments)
+                    {
+                        <tr>
+                            <td>
+                                @IndiaTime(appointment.StartDateTime).ToString("hh:mm tt")
+                            </td>
+
+                            <td>@appointment.Pet.PetName</td>
+
+                            <td>@appointment.Owner.FullName</td>
+
+                            <td>
+                                @(appointment.Specialisation?.SpecialisationName ?? "General")
+                            </td>
+
+                            <td>
+                                <span class="badge bg-secondary">
+                                    @appointment.Status
+                                </span>
+                            </td>
+
+                            <td>
+                                <button class="btn btn-primary btn-sm"
+                                        @onclick="() => ViewAppointmentAsync(appointment)">
+                                    View Details
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+
+            </table>
+        </div>;
+    }
+
+    private async Task ViewAppointmentAsync(Appointment appointment)
+    {
+        ErrorMessage = null;
+        Message = null;
+
+        SelectedAppointment = appointment;
+
+        RecordSymptoms = string.Empty;
+        RecordDiagnosis = string.Empty;
+        RecordTreatmentNotes = string.Empty;
+        RecordFollowUp = string.Empty;
+
+        // Reset vaccination form
+
+        SelectedVaccineId = 0;
+        VaccinationDate = DateOnly.FromDateTime(DateTime.Today);
+        NextDueDate = null;
+        DoseName = string.Empty;
+        VaccinationBatchNumber = string.Empty;
+        VaccinationNotes = string.Empty;
+
+        OwnerEmail = null;
+        OwnerPhone = null;
+
+        if (OwnerUsers.TryGetValue(appointment.Owner.UserId, out var ownerUser))
+        {
+            OwnerEmail = ownerUser.Email;
+            OwnerPhone = ownerUser.PhoneNumber;
+        }
+
+        SelectedPetMedicalRecords = await DbContext.MedicalRecords
+            .AsNoTracking()
+            .Include(r => r.Veterinarian)
+            .Where(r => r.PetId == appointment.PetId)
+            .OrderByDescending(r => r.RecordDate)
+            .ToListAsync();
+
+        SelectedAppointmentHistory = await DbContext.AppointmentStatusHistories
+            .AsNoTracking()
+            .Where(h => h.AppointmentId == appointment.AppointmentId)
+            .OrderByDescending(h => h.ChangedAt)
+            .ToListAsync();
+
+        // Load active vaccines for the selected pet's species
+
+        AvailableVaccines = await DbContext.Vaccines
+            .AsNoTracking()
+            .Where(v =>
+                v.SpeciesId == appointment.Pet.SpeciesId &&
+                v.IsActive)
+            .OrderBy(v => v.VaccineName)
+            .ToListAsync();
+
+        AvailableVaccinationSchedules =
+            await DbContext.PetVaccinationSchedules
+                .AsNoTracking()
+                .Include(s => s.Template)
+                    .ThenInclude(t => t.Vaccine)
+                .Where(s =>
+                    s.PetId == appointment.PetId &&
+                    s.IsActive &&
+                    s.VaccinationRecord == null &&
+                    s.Template.IsActive &&
+                    s.Template.IsApproved &&
+                    s.Template.ApprovedByVeterinarianProfileId != null &&
+                    s.Template.ApprovedAt != null &&
+                    s.Template.Vaccine.IsActive &&
+                    s.Template.Vaccine.ReviewStatus == "Approved" &&
+                    s.Template.Vaccine.SpeciesId == appointment.Pet.SpeciesId)
+                .OrderBy(s => s.DueDate)
+                .ToListAsync();
+
+        SelectedPetVaccinationScheduleId = 0;
+
+        // Load previous vaccinations for this pet
+
+        SelectedPetVaccinationRecords = await DbContext.VaccinationRecords
+            .AsNoTracking()
+            .Include(v => v.Vaccine)
+            .Include(v => v.Veterinarian)
+            .Where(v => v.PetId == appointment.PetId)
+            .OrderByDescending(v => v.VaccinationDate)
+            .ToListAsync();
+    }
+
+    private async Task SaveMedicalRecordAsync()
+    {
+        if (Veterinarian is null || SelectedAppointment is null)
+            return;
+
+        ErrorMessage = null;
+        Message = null;
+
+        if (string.IsNullOrWhiteSpace(RecordSymptoms))
+        {
+            ErrorMessage = "Please enter the symptoms.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(RecordDiagnosis))
+        {
+            ErrorMessage = "Please enter the diagnosis.";
+            return;
+        }
+
+        try
+        {
+            IsSavingRecord = true;
+
+            var appointment = await DbContext.Appointments
+                .FirstOrDefaultAsync(a =>
+                    a.AppointmentId == SelectedAppointment.AppointmentId &&
+                    a.VeterinarianProfileId == Veterinarian.VeterinarianProfileId);
+
+            if (appointment is null)
+            {
+                ErrorMessage = "Appointment not found or access denied.";
+                return;
+            }
+
+            if (appointment.Status == "Cancelled" ||
+                appointment.Status == "Canceled")
+            {
+                ErrorMessage = "Cannot add a record to a cancelled appointment.";
+                return;
+            }
+
+            var medicalRecord = new MedicalRecord
+            {
+                PetId = appointment.PetId,
+                AppointmentId = appointment.AppointmentId,
+                VeterinarianProfileId = Veterinarian.VeterinarianProfileId,
+                Symptoms = RecordSymptoms.Trim(),
+                Diagnosis = RecordDiagnosis.Trim(),
+                TreatmentNotes = string.IsNullOrWhiteSpace(RecordTreatmentNotes)
+                    ? null
+                    : RecordTreatmentNotes.Trim(),
+                FollowUpInstructions = string.IsNullOrWhiteSpace(RecordFollowUp)
+                    ? null
+                    : RecordFollowUp.Trim(),
+                RecordDate = DateTime.UtcNow
+            };
+
+            DbContext.MedicalRecords.Add(medicalRecord);
+
+            await DbContext.SaveChangesAsync();
+
+            SelectedPetMedicalRecords = await DbContext.MedicalRecords
+                .AsNoTracking()
+                .Include(r => r.Veterinarian)
+                .Where(r => r.PetId == appointment.PetId)
+                .OrderByDescending(r => r.RecordDate)
+                .ToListAsync();
+
+            RecordSymptoms = string.Empty;
+            RecordDiagnosis = string.Empty;
+            RecordTreatmentNotes = string.Empty;
+            RecordFollowUp = string.Empty;
+
+            Message = "Medical record saved successfully.";
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Unable to save medical record.");
+            ErrorMessage = "Unable to save medical record. Please try again.";
+        }
+        finally
+        {
+            IsSavingRecord = false;
+        }
+    }
+
+    private void SelectRecommendedVaccine(int vaccineId)
+    {
+        SelectedVaccineId = vaccineId;
+        SelectedPetVaccinationScheduleId = 0;
+    }
+
+    private string GetSelectedPetAge()
+    {
+        var pet = SelectedAppointment?.Pet;
+
+        if (pet is null)
+            return "Unavailable";
+
+        var today = DateOnly.FromDateTime(DateTime.Today);
+
+        int months;
+
+        if (pet.DateOfBirth.HasValue)
+        {
+            var dob = pet.DateOfBirth.Value;
+
+            if (dob > today)
+                return "Invalid date of birth";
+
+            months = (today.Year - dob.Year) * 12
+                     + today.Month - dob.Month;
+
+            if (today.Day < dob.Day)
+                months--;
+        }
+        else if (pet.EstimatedAgeMonths.HasValue &&
+                 pet.AgeEstimateRecordedAt.HasValue)
+        {
+            var recorded = pet.AgeEstimateRecordedAt.Value;
+
+            months = pet.EstimatedAgeMonths.Value
+                     + (today.Year - recorded.Year) * 12
+                     + today.Month - recorded.Month;
+
+            if (today.Day < recorded.Day)
+                months--;
+        }
+        else
+        {
+            return "Not recorded";
+        }
+
+        months = Math.Max(0, months);
+
+        return $"{months / 12} years, {months % 12} months"
+               + (pet.IsAgeEstimated ? " (estimated)" : "");
+    }
+    private Task OnScheduledDoseChanged()
+    {
+        var schedule = AvailableVaccinationSchedules.FirstOrDefault(s =>
+            s.PetVaccinationScheduleId == SelectedPetVaccinationScheduleId);
+
+        if (schedule != null)
+            SelectedVaccineId = schedule.Template.VaccineId;
+
+        return Task.CompletedTask;
+    }
+
+    // Save a vaccination record
+    private async Task SaveVaccinationAsync()
+    {
+        if (Veterinarian is null || SelectedAppointment is null)
+            return;
+
+        ErrorMessage = null;
+        Message = null;
+
+        if (string.IsNullOrWhiteSpace(DoseName))
+        {
+            ErrorMessage = "Please select the vaccination dose.";
+            return;
+        }
+
+        if (SelectedVaccineId <= 0)
+        {
+            ErrorMessage = "Please select a vaccine.";
+            return;
+        }
+
+        if (VaccinationDate > DateOnly.FromDateTime(DateTime.Today))
+        {
+            ErrorMessage = "Vaccination date cannot be in the future.";
+            return;
+        }
+
+        if (NextDueDate.HasValue &&
+            NextDueDate.Value < VaccinationDate)
+        {
+            ErrorMessage = "Next due date cannot be earlier than the vaccination date.";
+            return;
+        }
+
+        try
+        {
+            IsSavingVaccination = true;
+
+            // Verify that the appointment belongs to this veterinarian.
+
+            var appointment = await DbContext.Appointments
+                .FirstOrDefaultAsync(a =>
+                    a.AppointmentId == SelectedAppointment.AppointmentId &&
+                    a.VeterinarianProfileId ==
+                    Veterinarian.VeterinarianProfileId);
+
+            if (appointment is null)
+            {
+                ErrorMessage = "Appointment not found or access denied.";
+                return;
+            }
+
+            if (appointment.Status == "Cancelled" ||
+                appointment.Status == "Canceled")
+            {
+                ErrorMessage = "Cannot record a vaccination for a cancelled appointment.";
+                return;
+            }
+
+            // Verify that the vaccine is active and belongs to this pet's species.
+
+            var vaccine = await DbContext.Vaccines
+                .FirstOrDefaultAsync(v =>
+                    v.VaccineId == SelectedVaccineId &&
+                    v.SpeciesId == SelectedAppointment.Pet.SpeciesId &&
+                    v.IsActive);
+
+            if (vaccine is null)
+            {
+                ErrorMessage = "Selected vaccine is invalid or unavailable for this pet.";
+                return;
+            }
+
+            if (!string.Equals(
+                vaccine.ReviewStatus,
+                "Approved",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                ErrorMessage = "This vaccine has not been approved by the veterinarian and cannot be administered.";
+                return;
+            }
+            PetVaccinationSchedule? selectedSchedule = null;
+
+            if (SelectedPetVaccinationScheduleId > 0)
+            {
+                selectedSchedule = await DbContext.PetVaccinationSchedules
+                    .Include(s => s.Template)
+                    .FirstOrDefaultAsync(s =>
+                        s.PetVaccinationScheduleId == SelectedPetVaccinationScheduleId &&
+                        s.PetId == appointment.PetId &&
+                        s.IsActive &&
+                        s.VaccinationRecord == null &&
+                        s.Template.IsActive &&
+                        s.Template.IsApproved &&
+                        s.Template.ApprovedByVeterinarianProfileId != null &&
+                        s.Template.ApprovedAt != null &&
+                        s.Template.VaccineId == vaccine.VaccineId);
+
+                if (selectedSchedule is null)
+                {
+                    ErrorMessage = "Selected scheduled dose is unavailable or does not match the vaccine.";
+                    return;
+                }
+            }
+
+            var vaccinationRecord = new VaccinationRecord
+            {
+                PetId = appointment.PetId,
+                VaccineId = vaccine.VaccineId,
+                VeterinarianProfileId = Veterinarian.VeterinarianProfileId,
+                PetVaccinationScheduleId = selectedSchedule?.PetVaccinationScheduleId,
+                VaccinationDate = VaccinationDate,
+                NextDueDate = NextDueDate,
+                DoseName = DoseName,
+                BatchNumber = string.IsNullOrWhiteSpace(VaccinationBatchNumber)
+                    ? null
+                    : VaccinationBatchNumber.Trim(),
+                Notes = string.IsNullOrWhiteSpace(VaccinationNotes)
+                    ? null
+                    : VaccinationNotes.Trim()
+            };
+
+            DbContext.VaccinationRecords.Add(vaccinationRecord);
+
+            await DbContext.SaveChangesAsync();
+
+            // Refresh vaccination history
+
+            SelectedPetVaccinationRecords = await DbContext.VaccinationRecords
+                .AsNoTracking()
+                .Include(v => v.Vaccine)
+                .Include(v => v.Veterinarian)
+                .Where(v => v.PetId == appointment.PetId)
+                .OrderByDescending(v => v.VaccinationDate)
+                .ToListAsync();
+
+            // Reset vaccination form
+
+            SelectedVaccineId = 0;
+            SelectedPetVaccinationScheduleId = 0;
+            VaccinationDate = DateOnly.FromDateTime(DateTime.Today);
+            NextDueDate = null;
+            DoseName = string.Empty;
+            VaccinationBatchNumber = string.Empty;
+            VaccinationNotes = string.Empty;
+
+            Message = "Vaccination record saved successfully.";
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Unable to save vaccination record.");
+            ErrorMessage = "Unable to save vaccination record. Please try again.";
+        }
+        finally
+        {
+            IsSavingVaccination = false;
+        }
+    }
+
+    private async Task MarkSelectedAppointmentCompleted()
+    {
+        if (SelectedAppointment is null)
+            return;
+
+        await UpdateAppointmentStatusAsync(
+            SelectedAppointment.AppointmentId,
+            "Completed");
+    }
+
+    private async Task CancelSelectedAppointment()
+    {
+        if (SelectedAppointment is null)
+            return;
+
+        await UpdateAppointmentStatusAsync(
+            SelectedAppointment.AppointmentId,
+            "Cancelled");
+    }
+
+    private async Task UpdateAppointmentStatusAsync(
+        int appointmentId,
+        string newStatus)
+    {
+        if (Veterinarian is null)
+            return;
+
+        if (newStatus != "Completed" && newStatus != "Cancelled")
+            return;
+
+        try
+        {
+            IsUpdating = true;
+            ErrorMessage = null;
+            Message = null;
+
+            var appointment = await DbContext.Appointments
+                .FirstOrDefaultAsync(a =>
+                    a.AppointmentId == appointmentId &&
+                    a.VeterinarianProfileId ==
+                    Veterinarian.VeterinarianProfileId);
+
+            if (appointment is null)
+            {
+                ErrorMessage = "Appointment not found.";
+                return;
+            }
+
+            if (appointment.Status == "Completed" ||
+                appointment.Status == "Cancelled" ||
+                appointment.Status == "Canceled")
+            {
+                ErrorMessage = "This appointment has already been closed.";
+                return;
+            }
+
+            var authenticationState =
+                await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+            var currentUser = await UserManager.GetUserAsync(
+                authenticationState.User);
+
+            var previousStatus = appointment.Status;
+
+            appointment.Status = newStatus;
+            appointment.UpdatedAt = DateTime.UtcNow;
+
+            DbContext.AppointmentStatusHistories.Add(
+                new AppointmentStatusHistory
+                {
+                    AppointmentId = appointment.AppointmentId,
+                    PreviousStatus = previousStatus,
+                    NewStatus = newStatus,
+                    ChangedByUserId = currentUser?.Id,
+                    ChangedAt = DateTime.UtcNow,
+                    Remarks = "Updated by veterinarian."
+                });
+
+            await DbContext.SaveChangesAsync();
+
+            Message = $"Appointment #{appointmentId} marked as {newStatus}.";
+
+            await LoadAppointmentsAsync();
+
+            SelectedAppointment = AllAppointments
+                .FirstOrDefault(a => a.AppointmentId == appointmentId);
+
+            if (SelectedAppointment is not null)
+            {
+                await ViewAppointmentAsync(SelectedAppointment);
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "Unable to update appointment: " + ex.Message;
+        }
+        finally
+        {
+            IsUpdating = false;
+        }
+    }
+
+    private void CloseAppointmentDetails()
+    {
+        SelectedAppointment = null;
+        SelectedPetMedicalRecords.Clear();
+        SelectedAppointmentHistory.Clear();
+
+        AvailableVaccines.Clear();
+        AvailableVaccinationSchedules.Clear();
+        SelectedPetVaccinationScheduleId = 0;
+        SelectedPetVaccinationRecords.Clear();
+
+        SelectedVaccineId = 0;
+        NextDueDate = null;
+        VaccinationBatchNumber = string.Empty;
+        VaccinationNotes = string.Empty;
+
+        OwnerEmail = null;
+        OwnerPhone = null;
+    }
+
+    private DateTime IndiaTime(DateTime utcDateTime)
+    {
+        return TimeZoneInfo.ConvertTimeFromUtc(
+            DateTime.SpecifyKind(utcDateTime, DateTimeKind.Utc),
+            IndiaTimeZone);
+    }
+
+    private static TimeZoneInfo GetIndiaTimeZone()
+    {
+        try
+        {
+            return TimeZoneInfo.FindSystemTimeZoneById("Asia/Kolkata");
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            return TimeZoneInfo.FindSystemTimeZoneById(
+                "India Standard Time");
+        }
+    }
+}
+```
+
+
+
+

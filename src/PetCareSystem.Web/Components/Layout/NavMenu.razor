@@ -1,71 +1,143 @@
-﻿@implements IDisposable
+```razor
+@implements IDisposable
 
 @inject NavigationManager NavigationManager
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">PetCareSystem.Web</a>
+        <a class="navbar-brand" href="/">
+            🐾 PetCareSystem
+        </a>
     </div>
 </div>
 
 <input type="checkbox" title="Navigation menu" class="navbar-toggler" />
 
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+<div class="nav-scrollable"
+     onclick="document.querySelector('.navbar-toggler').click()">
+
     <nav class="nav flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="auth">
-                <span class="bi bi-lock-nav-menu" aria-hidden="true"></span> Auth Required
-            </NavLink>
-        </div>
 
         <AuthorizeView>
             <Authorized>
+
+                @if (context.User.IsInRole("PetOwner"))
+                {
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link"
+                                 href="owner/dashboard"
+                                 Match="NavLinkMatch.All">
+                            <span class="bi bi-house-door-fill-nav-menu"></span>
+                            Dashboard
+                        </NavLink>
+                    </div>
+
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="owner/pets">
+                            <span class="bi bi-heart-fill"></span>
+                            My Pets
+                        </NavLink>
+                    </div>
+
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="owner/appointments">
+                            <span class="bi bi-calendar-check"></span>
+                            Appointments
+                        </NavLink>
+                    </div>
+
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="owner/medical-records">
+                            <span class="bi bi-file-medical"></span>
+                            Medical Records
+                        </NavLink>
+                    </div>
+
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="owner/vaccinations">
+                            <span class="bi bi-shield-check"></span>
+                            Vaccinations
+                        </NavLink>
+                    </div>
+
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="owner/billing">
+                            <span class="bi bi-receipt"></span>
+                            Billing
+                        </NavLink>
+                    </div>
+                }
+
+                @if (context.User.IsInRole("Veterinarian"))
+                {
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="doctor/dashboard"
+                                 Match="NavLinkMatch.All">
+                            <span class="bi bi-house-door-fill"></span>
+                            Veterinarian Dashboard
+                        </NavLink>
+                    </div>
+
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="doctor/vaccination-schedules">
+                            <span class="bi bi-shield-plus"></span>
+                            Vaccination Schedules
+                        </NavLink>
+                    </div>
+                }
+
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="Account/Manage">
-                        <span class="bi bi-person-fill-nav-menu" aria-hidden="true"></span> @context.User.Identity?.Name
+                        <span class="bi bi-person-fill"></span>
+                        My Account
                     </NavLink>
                 </div>
+
                 <div class="nav-item px-3">
                     <form action="Account/Logout" method="post">
                         <AntiforgeryToken />
-                        <input type="hidden" name="ReturnUrl" value="@currentUrl" />
+
+                        <input type="hidden"
+                               name="ReturnUrl"
+                               value="@currentUrl" />
+
                         <button type="submit" class="nav-link">
-                            <span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true"></span> Logout
+                            <span class="bi bi-box-arrow-left"></span>
+                            Logout
                         </button>
                     </form>
                 </div>
+
             </Authorized>
+
             <NotAuthorized>
+
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link"
+                             href=""
+                             Match="NavLinkMatch.All">
+                        <span class="bi bi-house-door-fill"></span>
+                        Home
+                    </NavLink>
+                </div>
+
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="Account/Register">
-                        <span class="bi bi-person-nav-menu" aria-hidden="true"></span> Register
+                        <span class="bi bi-person-plus"></span>
+                        Register
                     </NavLink>
                 </div>
+
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="Account/Login">
-                        <span class="bi bi-person-badge-nav-menu" aria-hidden="true"></span> Login
+                        <span class="bi bi-box-arrow-in-right"></span>
+                        Login
                     </NavLink>
                 </div>
+
             </NotAuthorized>
         </AuthorizeView>
+
     </nav>
 </div>
 
@@ -74,13 +146,19 @@
 
     protected override void OnInitialized()
     {
-        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        currentUrl =
+            NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+
         NavigationManager.LocationChanged += OnLocationChanged;
     }
 
-    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    private void OnLocationChanged(
+        object? sender,
+        LocationChangedEventArgs e)
     {
-        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
+        currentUrl =
+            NavigationManager.ToBaseRelativePath(e.Location);
+
         StateHasChanged();
     }
 
@@ -89,4 +167,4 @@
         NavigationManager.LocationChanged -= OnLocationChanged;
     }
 }
-
+```

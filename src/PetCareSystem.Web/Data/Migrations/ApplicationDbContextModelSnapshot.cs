@@ -686,6 +686,9 @@ namespace PetCareSystem.Web.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PetId"));
 
+                    b.Property<DateOnly?>("AgeEstimateRecordedAt")
+                        .HasColumnType("date");
+
                     b.Property<int?>("BreedId")
                         .HasColumnType("integer");
 
@@ -698,8 +701,14 @@ namespace PetCareSystem.Web.Data.Migrations
                     b.Property<DateOnly?>("DateOfBirth")
                         .HasColumnType("date");
 
+                    b.Property<int?>("EstimatedAgeMonths")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Gender")
                         .HasColumnType("text");
+
+                    b.Property<bool>("IsAgeEstimated")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("MedicalNotes")
                         .HasColumnType("text");
@@ -730,6 +739,42 @@ namespace PetCareSystem.Web.Data.Migrations
                     b.HasIndex("SpeciesId");
 
                     b.ToTable("Pets");
+                });
+
+            modelBuilder.Entity("PetCareSystem.Web.Models.PetVaccinationSchedule", b =>
+                {
+                    b.Property<int>("PetVaccinationScheduleId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PetVaccinationScheduleId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateOnly>("DueDate")
+                        .HasColumnType("date");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text");
+
+                    b.Property<int>("PetId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("VaccinationScheduleTemplateId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("PetVaccinationScheduleId");
+
+                    b.HasIndex("VaccinationScheduleTemplateId");
+
+                    b.HasIndex("PetId", "VaccinationScheduleTemplateId")
+                        .IsUnique();
+
+                    b.ToTable("PetVaccinationSchedules");
                 });
 
             modelBuilder.Entity("PetCareSystem.Web.Models.Prescription", b =>
@@ -929,6 +974,9 @@ namespace PetCareSystem.Web.Data.Migrations
                     b.Property<string>("BatchNumber")
                         .HasColumnType("text");
 
+                    b.Property<string>("DoseName")
+                        .HasColumnType("text");
+
                     b.Property<DateOnly?>("NextDueDate")
                         .HasColumnType("date");
 
@@ -936,6 +984,9 @@ namespace PetCareSystem.Web.Data.Migrations
                         .HasColumnType("text");
 
                     b.Property<int>("PetId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("PetVaccinationScheduleId")
                         .HasColumnType("integer");
 
                     b.Property<DateOnly>("VaccinationDate")
@@ -951,11 +1002,89 @@ namespace PetCareSystem.Web.Data.Migrations
 
                     b.HasIndex("PetId");
 
+                    b.HasIndex("PetVaccinationScheduleId")
+                        .IsUnique();
+
                     b.HasIndex("VaccineId");
 
                     b.HasIndex("VeterinarianProfileId");
 
                     b.ToTable("VaccinationRecords");
+                });
+
+            modelBuilder.Entity("PetCareSystem.Web.Models.VaccinationScheduleTemplate", b =>
+                {
+                    b.Property<int>("VaccinationScheduleTemplateId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("VaccinationScheduleTemplateId"));
+
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("ApprovedByVeterinarianProfileId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("DoseName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("DoseNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("IntervalAfterPreviousDoseMonths")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsApproved")
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("MaximumAgeMonths")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("MinimumAgeMonths")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RecommendedAgeDays")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("RecommendedAgeMonths")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RegionCode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("RequiresVeterinarianApproval")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("SourceName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SourceReference")
+                        .HasColumnType("text");
+
+                    b.Property<DateOnly?>("SourceReviewedOn")
+                        .HasColumnType("date");
+
+                    b.Property<int>("SpeciesId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("VaccineId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("VaccinationScheduleTemplateId");
+
+                    b.HasIndex("ApprovedByVeterinarianProfileId");
+
+                    b.HasIndex("SpeciesId");
+
+                    b.HasIndex("VaccineId");
+
+                    b.ToTable("VaccinationScheduleTemplates");
                 });
 
             modelBuilder.Entity("PetCareSystem.Web.Models.Vaccine", b =>
@@ -966,7 +1095,19 @@ namespace PetCareSystem.Web.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("VaccineId"));
 
+                    b.Property<string>("AdministrationRoute")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("ApprovedByVeterinarianProfileId")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DiseasePrevented")
                         .HasColumnType("text");
 
                     b.Property<bool>("IsActive")
@@ -975,7 +1116,23 @@ namespace PetCareSystem.Web.Data.Migrations
                     b.Property<string>("RecommendedAge")
                         .HasColumnType("text");
 
+                    b.Property<string>("RecommendedDose")
+                        .HasColumnType("text");
+
                     b.Property<string>("RecommendedInterval")
+                        .HasColumnType("text");
+
+                    b.Property<DateOnly?>("ResearchDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("ReviewStatus")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("SourceName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SourceReference")
                         .HasColumnType("text");
 
                     b.Property<int>("SpeciesId")
@@ -985,7 +1142,13 @@ namespace PetCareSystem.Web.Data.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("VerificationStatus")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.HasKey("VaccineId");
+
+                    b.HasIndex("ApprovedByVeterinarianProfileId");
 
                     b.HasIndex("SpeciesId");
 
@@ -1411,6 +1574,25 @@ namespace PetCareSystem.Web.Data.Migrations
                     b.Navigation("Species");
                 });
 
+            modelBuilder.Entity("PetCareSystem.Web.Models.PetVaccinationSchedule", b =>
+                {
+                    b.HasOne("PetCareSystem.Web.Models.Pet", "Pet")
+                        .WithMany()
+                        .HasForeignKey("PetId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PetCareSystem.Web.Models.VaccinationScheduleTemplate", "Template")
+                        .WithMany()
+                        .HasForeignKey("VaccinationScheduleTemplateId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Pet");
+
+                    b.Navigation("Template");
+                });
+
             modelBuilder.Entity("PetCareSystem.Web.Models.Prescription", b =>
                 {
                     b.HasOne("PetCareSystem.Web.Models.MedicalRecord", "MedicalRecord")
@@ -1463,6 +1645,11 @@ namespace PetCareSystem.Web.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("PetCareSystem.Web.Models.PetVaccinationSchedule", "PetVaccinationSchedule")
+                        .WithOne("VaccinationRecord")
+                        .HasForeignKey("PetCareSystem.Web.Models.VaccinationRecord", "PetVaccinationScheduleId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("PetCareSystem.Web.Models.Vaccine", "Vaccine")
                         .WithMany()
                         .HasForeignKey("VaccineId")
@@ -1477,18 +1664,53 @@ namespace PetCareSystem.Web.Data.Migrations
 
                     b.Navigation("Pet");
 
+                    b.Navigation("PetVaccinationSchedule");
+
                     b.Navigation("Vaccine");
 
                     b.Navigation("Veterinarian");
                 });
 
-            modelBuilder.Entity("PetCareSystem.Web.Models.Vaccine", b =>
+            modelBuilder.Entity("PetCareSystem.Web.Models.VaccinationScheduleTemplate", b =>
                 {
+                    b.HasOne("PetCareSystem.Web.Models.VeterinarianProfile", "ApprovedByVeterinarian")
+                        .WithMany()
+                        .HasForeignKey("ApprovedByVeterinarianProfileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("PetCareSystem.Web.Models.Species", "Species")
                         .WithMany()
                         .HasForeignKey("SpeciesId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("PetCareSystem.Web.Models.Vaccine", "Vaccine")
+                        .WithMany()
+                        .HasForeignKey("VaccineId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ApprovedByVeterinarian");
+
+                    b.Navigation("Species");
+
+                    b.Navigation("Vaccine");
+                });
+
+            modelBuilder.Entity("PetCareSystem.Web.Models.Vaccine", b =>
+                {
+                    b.HasOne("PetCareSystem.Web.Models.VeterinarianProfile", "ApprovedByVeterinarian")
+                        .WithMany()
+                        .HasForeignKey("ApprovedByVeterinarianProfileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PetCareSystem.Web.Models.Species", "Species")
+                        .WithMany()
+                        .HasForeignKey("SpeciesId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ApprovedByVeterinarian");
 
                     b.Navigation("Species");
                 });
@@ -1554,6 +1776,11 @@ namespace PetCareSystem.Web.Data.Migrations
             modelBuilder.Entity("PetCareSystem.Web.Models.Department", b =>
                 {
                     b.Navigation("Specialisations");
+                });
+
+            modelBuilder.Entity("PetCareSystem.Web.Models.PetVaccinationSchedule", b =>
+                {
+                    b.Navigation("VaccinationRecord");
                 });
 
             modelBuilder.Entity("PetCareSystem.Web.Models.Species", b =>

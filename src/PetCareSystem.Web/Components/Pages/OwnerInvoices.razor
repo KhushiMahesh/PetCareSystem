@@ -1,0 +1,247 @@
+@page "/owner/invoices"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "PetOwner")]
+
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using PetCareSystem.Web.Data
+@using PetCareSystem.Web.Models
+
+@inject UserManager<ApplicationUser> UserManager
+@inject ApplicationDbContext DbContext
+@inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager Navigation
+@inject Microsoft.JSInterop.IJSRuntime JS
+
+<PageTitle>My Invoices | PetCareSystem</PageTitle>
+
+<div class="container py-4">
+    <h2>My Invoices</h2>
+    <p class="text-muted">View your pets' invoices, payments and outstanding balances.</p>
+
+    @if (IsLoading)
+    {
+        <p>Loading your invoices...</p>
+    }
+    else if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <div class="alert alert-danger">@ErrorMessage</div>
+    }
+    else if (Invoices.Count == 0)
+    {
+        <div class="alert alert-info">You don't have any invoices yet.</div>
+    }
+    else
+    {
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card shadow-sm p-3">
+                    <div class="text-muted">Total Invoiced</div>
+                    <h4>&#8377;@TotalInvoiced.ToString("N2")</h4>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm p-3">
+                    <div class="text-muted">Total Paid</div>
+                    <h4 class="text-success">&#8377;@TotalPaid.ToString("N2")</h4>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm p-3">
+                    <div class="text-muted">Outstanding Balance</div>
+                    <h4 class="text-danger">&#8377;@TotalBalance.ToString("N2")</h4>
+                </div>
+            </div>
+        </div>
+
+        @foreach (var invoice in Invoices)
+        {
+            var paid = PaidAmounts.GetValueOrDefault(invoice.InvoiceId);
+            var balance = invoice.TotalAmount - paid;
+
+            <div class="card shadow-sm mb-3">
+                <div class="card-body" id="invoice-@invoice.InvoiceId">
+                    <div class="d-flex justify-content-between flex-wrap">
+                        <div>
+                            <h5>@invoice.InvoiceNumber</h5>
+                            <div class="text-muted">Date: @invoice.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")</div>
+                            <div>Pet: @(PetNames.GetValueOrDefault(invoice.InvoiceId, "Pet information unavailable"))</div>
+                        </div>
+                        <span class="badge @(invoice.Status == "Paid" ? "bg-success" : invoice.Status == "PartiallyPaid" ? "bg-warning text-dark" : "bg-danger") align-self-start">
+                            @invoice.Status
+                        </span>
+                    </div>
+
+                    <hr />
+                    <div class="row g-2">
+                        <div class="col-md-3">Total: <strong>&#8377;@invoice.TotalAmount.ToString("N2")</strong></div>
+                        <div class="col-md-3">Paid: <strong class="text-success">&#8377;@paid.ToString("N2")</strong></div>
+                        <div class="col-md-3">Balance: <strong class="text-danger">&#8377;@balance.ToString("N2")</strong></div>
+                    </div>
+
+                    <button class="btn btn-outline-primary btn-sm mt-3 no-print"
+                            @onclick="() => ToggleDetails(invoice.InvoiceId)">
+                        @(ExpandedInvoices.Contains(invoice.InvoiceId) ? "Hide Details" : "View Details")
+                    </button>
+                    <button class="btn btn-success btn-sm mt-3 no-print"
+                            @onclick="() => PrintInvoiceAsync(invoice.InvoiceId)">
+                        Print / Save PDF
+                    </button>
+
+                    @if (ExpandedInvoices.Contains(invoice.InvoiceId))
+                    {
+                        <div class="mt-3">
+                            <h6>Invoice Items</h6>
+                            @if (InvoiceItems.ContainsKey(invoice.InvoiceId) && InvoiceItems[invoice.InvoiceId].Count > 0)
+                            {
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th>Description</th>
+                                                <th>Quantity</th>
+                                                <th>Unit Price</th>
+                                                <th>Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var item in InvoiceItems[invoice.InvoiceId])
+                                            {
+                                                <tr>
+                                                    <td>@item.Description</td>
+                                                    <td>@item.Quantity</td>
+                                                    <td>&#8377;@item.UnitPrice.ToString("N2")</td>
+                                                    <td>&#8377;@item.TotalPrice.ToString("N2")</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+
+                            <h6 class="mt-3">Payment History</h6>
+                            @if (Payments.ContainsKey(invoice.InvoiceId) && Payments[invoice.InvoiceId].Count > 0)
+                            {
+                                @foreach (var payment in Payments[invoice.InvoiceId])
+                                {
+                                    <div class="border rounded p-2 mb-2">
+                                        &#8377;@payment.Amount.ToString("N2") —
+                                        @payment.PaymentMethod —
+                                        @payment.PaymentStatus —
+                                        @payment.PaymentDate.ToLocalTime().ToString("dd MMM yyyy")
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <p class="text-muted">No payments recorded yet.</p>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private bool IsLoading = true;
+    private string ErrorMessage = "";
+    private List<Invoice> Invoices = new();
+    private Dictionary<int, decimal> PaidAmounts = new();
+    private Dictionary<int, string> PetNames = new();
+    private Dictionary<int, List<InvoiceItem>> InvoiceItems = new();
+    private Dictionary<int, List<Payment>> Payments = new();
+    private HashSet<int> ExpandedInvoices = new();
+
+    private decimal TotalInvoiced => Invoices.Sum(i => i.TotalAmount);
+    private decimal TotalPaid => PaidAmounts.Values.Sum();
+    private decimal TotalBalance => TotalInvoiced - TotalPaid;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = await UserManager.GetUserAsync(authState.User);
+
+            if (user == null)
+            {
+                Navigation.NavigateTo("/Account/Login");
+                return;
+            }
+
+            var owner = await DbContext.OwnerProfiles
+                .FirstOrDefaultAsync(o => o.UserId == user.Id);
+
+            if (owner == null)
+            {
+                ErrorMessage = "Your owner profile could not be found.";
+                return;
+            }
+
+            Invoices = await DbContext.Set<Invoice>()
+                .Where(i => i.OwnerProfileId == owner.OwnerProfileId)
+                .OrderByDescending(i => i.CreatedAt)
+                .ToListAsync();
+
+            foreach (var invoice in Invoices)
+            {
+                var items = await DbContext.Set<InvoiceItem>()
+                    .Where(i => i.InvoiceId == invoice.InvoiceId)
+                    .ToListAsync();
+
+                var payments = await DbContext.Set<Payment>()
+                    .Where(p => p.InvoiceId == invoice.InvoiceId &&
+                                p.PaymentStatus == "Successful")
+                    .OrderByDescending(p => p.PaymentDate)
+                    .ToListAsync();
+
+                InvoiceItems[invoice.InvoiceId] = items;
+                Payments[invoice.InvoiceId] = payments;
+                PaidAmounts[invoice.InvoiceId] = payments.Sum(p => p.Amount);
+
+                if (invoice.AppointmentId.HasValue)
+                {
+                    var petName = await DbContext.Set<Appointment>()
+                        .Where(a => a.AppointmentId == invoice.AppointmentId.Value &&
+                                    a.OwnerProfileId == owner.OwnerProfileId)
+                        .Select(a => a.Pet.PetName)
+                        .FirstOrDefaultAsync();
+
+                    PetNames[invoice.InvoiceId] = petName ?? "Unavailable";
+                }
+                else if (invoice.EmergencyCaseId.HasValue)
+                {
+                    var petName = await DbContext.EmergencyCases
+                        .Where(e => e.EmergencyCaseId == invoice.EmergencyCaseId.Value &&
+                                    e.OwnerProfileId == owner.OwnerProfileId)
+                        .Select(e => e.Pet.PetName)
+                        .FirstOrDefaultAsync();
+
+                    PetNames[invoice.InvoiceId] = petName ?? "Unavailable";
+                }
+            }
+        }
+        catch (Exception)
+        {
+            ErrorMessage = "Unable to load your invoices. Please try again.";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task PrintInvoiceAsync(int invoiceId)
+    {
+        ExpandedInvoices.Add(invoiceId);
+        StateHasChanged();
+        await Task.Delay(300);
+        await JS.InvokeVoidAsync("printInvoice", $"invoice-{invoiceId}");
+    }
+    private void ToggleDetails(int invoiceId)
+    {
+        if (!ExpandedInvoices.Add(invoiceId))
+            ExpandedInvoices.Remove(invoiceId);
+    }
+}

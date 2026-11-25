@@ -1,0 +1,118 @@
+@page "/owner/emergency-cases"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "PetOwner")]
+
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using PetCareSystem.Web.Data
+@using PetCareSystem.Web.Models
+
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ApplicationDbContext Db
+
+<PageTitle>My Emergency Cases</PageTitle>
+
+<div class="container py-4">
+    <h2>My Emergency Cases</h2>
+    <p class="text-muted">Track emergency treatment and veterinary care for your pets.</p>
+
+    @if (IsLoading)
+    {
+        <p>Loading emergency history...</p>
+    }
+    else if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <div class="alert alert-danger">@ErrorMessage</div>
+    }
+    else if (Cases.Count == 0)
+    {
+        <div class="alert alert-info">No emergency cases have been registered for your pets.</div>
+    }
+    else
+    {
+        @foreach (var item in Cases)
+        {
+            var invoice = Invoices.FirstOrDefault(i => i.EmergencyCaseId == item.EmergencyCaseId);
+
+            <div class="card shadow-sm mb-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between flex-wrap">
+                        <h5>@item.Pet.PetName — Emergency #@item.EmergencyCaseId</h5>
+                        <span class="badge @(item.TriagePriority == "Critical" ? "bg-danger" : item.TriagePriority == "High" ? "bg-warning text-dark" : "bg-secondary")">
+                            @item.TriagePriority Priority
+                        </span>
+                    </div>
+
+                    <p><strong>Symptoms:</strong> @item.Symptoms</p>
+                    <p><strong>Additional Notes:</strong> @(item.AdditionalNotes ?? "None")</p>
+                    <p><strong>Arrival:</strong> @item.ArrivalTime.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt")</p>
+                    <p><strong>Case Status:</strong> <span class="badge bg-info text-dark">@item.CaseStatus</span></p>
+                    <p><strong>Veterinarian:</strong> @(item.Veterinarian?.FullName ?? "Not yet assigned")</p>
+
+                    @if (invoice != null)
+                    {
+                        <hr />
+                        <p><strong>Invoice:</strong> @invoice.InvoiceNumber</p>
+                        <p><strong>Total:</strong> ₹@invoice.TotalAmount.ToString("N2")</p>
+                        <p><strong>Payment Status:</strong> @invoice.Status</p>
+                        <a href="/owner/invoices" class="btn btn-outline-primary btn-sm">View Invoice Details</a>
+                    }
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private List<EmergencyCase> Cases = new();
+    private List<Invoice> Invoices = new();
+    private bool IsLoading = true;
+    private string? ErrorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = await UserManager.GetUserAsync(authState.User);
+
+            if (user == null)
+            {
+                ErrorMessage = "Please log in again.";
+                return;
+            }
+
+            var owner = await Db.OwnerProfiles
+                .FirstOrDefaultAsync(o => o.UserId == user.Id);
+
+            if (owner == null)
+            {
+                ErrorMessage = "Owner profile not found.";
+                return;
+            }
+
+            Cases = await Db.EmergencyCases
+                .Include(e => e.Pet)
+                .Include(e => e.Veterinarian)
+                .Where(e => e.OwnerProfileId == owner.OwnerProfileId)
+                .OrderByDescending(e => e.ArrivalTime)
+                .ToListAsync();
+
+            var caseIds = Cases.Select(e => e.EmergencyCaseId).ToList();
+
+            Invoices = await Db.Invoices
+                .Where(i => i.EmergencyCaseId.HasValue &&
+                            caseIds.Contains(i.EmergencyCaseId.Value))
+                .ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "Unable to load emergency history: " + ex.Message;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+}

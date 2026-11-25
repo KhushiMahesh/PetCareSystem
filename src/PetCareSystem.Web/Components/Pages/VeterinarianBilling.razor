@@ -1,0 +1,544 @@
+@page "/doctor/billing"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Veterinarian")]
+
+@using Microsoft.EntityFrameworkCore
+@using PetCareSystem.Web.Data
+@using PetCareSystem.Web.Models
+@using PetCareSystem.Web.Services
+
+@inject ApplicationDbContext Db
+@inject BillingService Billing
+
+<PageTitle>Billing Management</PageTitle>
+
+<div class="container py-4">
+    <h2>Billing Management</h2>
+    <p class="text-muted">Search pets, manage veterinary services, invoices and payments.</p>
+
+    @if (!string.IsNullOrWhiteSpace(Message))
+    {
+        <div class="alert @(IsError ? "alert-danger" : "alert-success")">@Message</div>
+    }
+
+    <h4 class="mt-4">Find Appointment by Pet ID</h4>
+    <div class="card p-3 mb-4">
+        <label class="form-label">Enter Pet ID</label>
+        <input type="number" min="1" class="form-control"
+               placeholder="Search using Pet ID..."
+               @bind="PetIdSearch" @bind:event="oninput" />
+        @if (!string.IsNullOrWhiteSpace(PetIdSearch))
+        {
+            <small class="text-muted mt-2">Showing appointments matching Pet ID: @PetIdSearch</small>
+        }
+    </div>
+
+    <h4>Appointments & Services</h4>
+
+    @foreach (var appointment in FilteredAppointments)
+    {
+        <div class="card mb-3 p-3">
+            <div class="d-flex justify-content-between flex-wrap">
+                <div>
+                    <h5>@appointment.Pet.PetName</h5>
+                    <div><strong>Pet ID:</strong> @appointment.PetId</div>
+                    <div><strong>Appointment ID:</strong> @appointment.AppointmentId</div>
+                    <div><strong>Owner:</strong> @appointment.Pet.Owner.FullName</div>
+                    <div><strong>Date:</strong> @appointment.StartDateTime.ToString("dd MMM yyyy, hh:mm tt")</div>
+                    <span class="badge bg-secondary mt-2">@appointment.Status</span>
+                    <div class="mt-2">Services added: @AppointmentServiceCounts.GetValueOrDefault(appointment.AppointmentId)</div>
+                </div>
+            </div>
+
+            @if (Invoices.Any(i => i.AppointmentId == appointment.AppointmentId))
+            {
+                <div class="alert alert-success mt-3 mb-0">
+                    <strong>Invoice Generated:</strong> @Invoices.First(i => i.AppointmentId == appointment.AppointmentId).InvoiceNumber
+                    â€” This appointment has already been billed.
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-warning mt-3 mb-2">
+                    <strong>Not Invoiced:</strong> Billing is pending for this appointment.
+                </div>
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-6">
+                        <label class="form-label">Select Service</label>
+                        <select class="form-select"
+                                value="@SelectedServiceIds.GetValueOrDefault(appointment.AppointmentId)"
+                                @onchange="(e) => UpdateSelectedService(appointment.AppointmentId, e.Value?.ToString())">
+                            @foreach (var service in Services)
+                            {
+                                <option value="@service.ServiceId">@service.ServiceName - &#8377;@service.Price.ToString("N2")</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Quantity</label>
+                        <input type="number" min="1" class="form-control"
+                               value="@SelectedQuantities.GetValueOrDefault(appointment.AppointmentId)"
+                               @onchange="(e) => UpdateQuantity(appointment.AppointmentId, e.Value?.ToString())" />
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-outline-primary"
+                                @onclick="() => AddService(appointment.AppointmentId)">
+                            Add Service
+                        </button>
+                        <button class="btn btn-primary ms-2"
+                                disabled="@(AppointmentServiceCounts.GetValueOrDefault(appointment.AppointmentId) == 0)"
+                                @onclick="() => GenerateInvoice(appointment.AppointmentId)">
+                            Generate Invoice
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    @if (!FilteredAppointments.Any())
+    {
+        <p class="text-muted">
+            @(string.IsNullOrWhiteSpace(PetIdSearch)
+                ? "No appointments available for billing."
+                : "No billable appointments found for this Pet ID.")
+        </p>
+    }
+
+    <h4 class="mt-5">Emergency Cases & Billing</h4>
+    @if (EmergencyCases.Count == 0)
+    {
+        <p class="text-muted">No emergency cases available.</p>
+    }
+    else
+    {
+        @foreach (var emergencyCase in EmergencyCases)
+        {
+            var emergencyInvoice = Invoices.FirstOrDefault(i => i.EmergencyCaseId == emergencyCase.EmergencyCaseId);
+
+            <div class="card p-3 mb-3">
+                <div class="d-flex justify-content-between flex-wrap">
+                    <div>
+                        <h5>@emergencyCase.Pet.PetName - Emergency #@emergencyCase.EmergencyCaseId</h5>
+                        <div><strong>Pet ID:</strong> @emergencyCase.PetId</div>
+                        <div><strong>Owner:</strong> @emergencyCase.Owner.FullName</div>
+                        <div><strong>Priority:</strong> @emergencyCase.TriagePriority</div>
+                        <div><strong>Status:</strong> @emergencyCase.CaseStatus</div>
+                        <div><strong>Symptoms:</strong> @emergencyCase.Symptoms</div>
+                    </div>
+                </div>
+
+                @if (emergencyInvoice != null)
+                {
+                    <div class="alert alert-success mt-3 mb-0">
+                        Invoice generated: <strong>@emergencyInvoice.InvoiceNumber</strong>
+                        — ₹@emergencyInvoice.TotalAmount.ToString("N2")
+                    </div>
+                }
+                else
+                {
+                    <div class="row mt-3 align-items-end">
+                        <div class="col-md-4">
+                            <label class="form-label">Additional Treatment Charges (₹)</label>
+                            <input type="number" min="0" step="0.01"
+                                   class="form-control"
+                                   @bind="EmergencyTreatmentCharges[emergencyCase.EmergencyCaseId]" />
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-danger"
+                                    @onclick="() => GenerateEmergencyInvoice(emergencyCase.EmergencyCaseId)">
+                                Generate Emergency Invoice
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    }
+    <h4 class="mt-5">Invoices</h4>
+
+    @if (Invoices.Count == 0)
+    {
+        <p>No invoices generated yet.</p>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead>
+                    <tr>
+                        <th>Invoice</th>
+                        <th>Pet</th>
+                        <th>Pet ID</th>
+                        <th>Owner</th>
+                        <th>Subtotal</th>
+                        <th>Total</th>
+                        <th>Paid</th>
+                        <th>Balance</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var invoice in Invoices)
+                    {
+                        var paid = PaidAmounts.GetValueOrDefault(invoice.InvoiceId);
+                        var invoiceAppointment = invoice.AppointmentId.HasValue
+                            ? AppointmentsForInvoices.GetValueOrDefault(invoice.InvoiceId)
+                            : null;
+                        var invoiceEmergency = invoice.EmergencyCaseId.HasValue
+                            ? EmergencyCases.FirstOrDefault(e => e.EmergencyCaseId == invoice.EmergencyCaseId.Value)
+                            : null;
+                        var invoicePetName = invoiceAppointment?.Pet?.PetName ?? invoiceEmergency?.Pet?.PetName ?? "—";
+                        var invoicePetId = invoiceAppointment?.PetId ?? invoiceEmergency?.PetId;
+                        var invoiceOwnerName = invoiceAppointment?.Pet?.Owner?.FullName ?? invoiceEmergency?.Owner?.FullName ?? $"Owner #{invoice.OwnerProfileId}";
+
+                        <tr>
+                            <td>@invoice.InvoiceNumber</td>
+                            <td>@invoicePetName</td>
+                            <td>@(invoicePetId?.ToString() ?? "—")</td>
+                            <td>@invoiceOwnerName</td>
+                            <td>&#8377;@invoice.SubTotal.ToString("N2")</td>
+                            <td>&#8377;@invoice.TotalAmount.ToString("N2")</td>
+                            <td>&#8377;@paid.ToString("N2")</td>
+                            <td>&#8377;@((invoice.TotalAmount - paid).ToString("N2"))</td>
+                            <td>@invoice.Status</td>
+                            <td>
+                                <button class="btn btn-outline-info btn-sm mb-1"
+                                        @onclick="() => ToggleInvoiceDetails(invoice.InvoiceId)">
+                                    @(ExpandedInvoiceIds.Contains(invoice.InvoiceId) ? "Hide Details" : "View Details")
+                                </button>
+                                @if (invoice.Status != "Cancelled" && paid < invoice.TotalAmount)
+                                {
+                                    <button class="btn btn-success btn-sm"
+                                            @onclick="() => SelectInvoice(invoice.InvoiceId)">
+                                        Record Payment
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+
+                        @if (ExpandedInvoiceIds.Contains(invoice.InvoiceId))
+                        {
+                            <tr>
+                                <td colspan="10">
+                                    <strong>Service Breakdown ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â @invoice.InvoiceNumber</strong>
+                                    @if (InvoiceItemsByInvoice.TryGetValue(invoice.InvoiceId, out var items) && items.Count > 0)
+                                    {
+                                        <table class="table table-sm table-striped mt-2">
+                                            <thead>
+                                                <tr>
+                                                    <th>Service Name</th>
+                                                    <th>Quantity</th>
+                                                    <th>Unit Price</th>
+                                                    <th>Amount</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var item in items)
+                                                {
+                                                    <tr>
+                                                        <td>@item.Description</td>
+                                                        <td>@item.Quantity</td>
+                                                        <td>&#8377;@item.UnitPrice.ToString("N2")</td>
+                                                        <td>&#8377;@item.TotalPrice.ToString("N2")</td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    }
+                                    else
+                                    {
+                                        <p class="text-muted mt-2">No service line items found for this invoice.</p>
+                                    }
+                                    <div class="text-end">
+                                        <div>Subtotal: &#8377;@invoice.SubTotal.ToString("N2")</div>
+                                        <div>Tax: &#8377;@invoice.TaxAmount.ToString("N2")</div>
+                                        <div>Discount: &#8377;@invoice.DiscountAmount.ToString("N2")</div>
+                                        <strong>Grand Total: &#8377;@invoice.TotalAmount.ToString("N2")</strong>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    @if (SelectedInvoiceId.HasValue)
+    {
+        <div class="card mt-4 p-3">
+            <h5>Record Payment</h5>
+            <EditForm Model="PaymentInput" OnValidSubmit="SavePayment">
+                <div class="mb-3">
+                    <label class="form-label">Amount (&#8377;)</label>
+                    <InputNumber class="form-control" @bind-Value="PaymentInput.Amount" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Payment Method</label>
+                    <InputSelect class="form-select" @bind-Value="PaymentInput.Method">
+                        <option value="Cash">Cash</option>
+                        <option value="UPI">UPI</option>
+                        <option value="Card">Card</option>
+                        <option value="Online">Online</option>
+                    </InputSelect>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Transaction Reference</label>
+                    <InputText class="form-control" @bind-Value="PaymentInput.Reference" />
+                </div>
+                <button class="btn btn-primary" type="submit">Save Payment</button>
+                <button class="btn btn-secondary ms-2" type="button" @onclick="() => SelectedInvoiceId = null">Cancel</button>
+            </EditForm>
+        </div>
+    }
+</div>
+
+@code {
+    private List<Appointment> Appointments = new();
+    private List<Service> Services = new();
+    private List<EmergencyCase> EmergencyCases = new();
+    private Dictionary<int, decimal> EmergencyTreatmentCharges = new();
+    private List<Invoice> Invoices = new();
+    private Dictionary<int, decimal> PaidAmounts = new();
+    private Dictionary<int, int> AppointmentServiceCounts = new();
+    private Dictionary<int, int> SelectedServiceIds = new();
+    private Dictionary<int, int> SelectedQuantities = new();
+    private Dictionary<int, List<InvoiceItem>> InvoiceItemsByInvoice = new();
+    private Dictionary<int, Appointment> AppointmentsForInvoices = new();
+    private HashSet<int> ExpandedInvoiceIds = new();
+
+    private string PetIdSearch = string.Empty;
+    private int? SelectedInvoiceId;
+    private string Message = string.Empty;
+    private bool IsError;
+    private PaymentForm PaymentInput = new();
+
+    private IEnumerable<Appointment> FilteredAppointments =>
+        string.IsNullOrWhiteSpace(PetIdSearch)
+            ? Appointments
+            : int.TryParse(PetIdSearch, out var petId)
+                ? Appointments.Where(a => a.PetId == petId)
+                : Enumerable.Empty<Appointment>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        Appointments = await Db.Set<Appointment>()
+            .Include(a => a.Pet)
+                .ThenInclude(p => p.Owner)
+            .Where(a => a.Status != "Cancelled")
+            .OrderByDescending(a => a.StartDateTime)
+            .ToListAsync();
+
+        EmergencyCases = await Db.EmergencyCases
+            .Include(e => e.Pet)
+            .Include(e => e.Owner)
+            .Include(e => e.Veterinarian)
+            .OrderByDescending(e => e.ArrivalTime)
+            .ToListAsync();
+
+        foreach (var emergencyCase in EmergencyCases)
+        {
+            if (!EmergencyTreatmentCharges.ContainsKey(emergencyCase.EmergencyCaseId))
+                EmergencyTreatmentCharges[emergencyCase.EmergencyCaseId] = 0;
+        }
+        Services = await Db.Set<Service>()
+            .Where(s => s.IsActive)
+            .OrderBy(s => s.ServiceName)
+            .ToListAsync();
+
+        AppointmentServiceCounts = await Db.Set<AppointmentService>()
+            .GroupBy(s => s.AppointmentId)
+            .Select(g => new { AppointmentId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(g => g.AppointmentId, g => g.Count);
+
+        foreach (var appointment in Appointments)
+        {
+            if (!SelectedServiceIds.ContainsKey(appointment.AppointmentId))
+                SelectedServiceIds[appointment.AppointmentId] = Services.FirstOrDefault()?.ServiceId ?? 0;
+
+            if (!SelectedQuantities.ContainsKey(appointment.AppointmentId))
+                SelectedQuantities[appointment.AppointmentId] = 1;
+        }
+
+        Invoices = await Db.Invoices
+            .OrderByDescending(i => i.CreatedAt)
+            .ToListAsync();
+
+        var appointmentIds = Invoices
+            .Where(i => i.AppointmentId.HasValue)
+            .Select(i => i.AppointmentId!.Value)
+            .Distinct()
+            .ToList();
+
+        var invoiceAppointments = await Db.Set<Appointment>()
+            .Include(a => a.Pet)
+                .ThenInclude(p => p.Owner)
+            .Where(a => appointmentIds.Contains(a.AppointmentId))
+            .ToListAsync();
+
+        var appointmentLookup = invoiceAppointments.ToDictionary(a => a.AppointmentId);
+        AppointmentsForInvoices = Invoices
+            .Where(i => i.AppointmentId.HasValue && appointmentLookup.ContainsKey(i.AppointmentId.Value))
+            .ToDictionary(i => i.InvoiceId, i => appointmentLookup[i.AppointmentId!.Value]);
+
+        var invoiceIds = Invoices.Select(i => i.InvoiceId).ToList();
+        var invoiceItems = await Db.InvoiceItems
+            .Where(i => invoiceIds.Contains(i.InvoiceId))
+            .OrderBy(i => i.InvoiceItemId)
+            .ToListAsync();
+
+        InvoiceItemsByInvoice = invoiceItems
+            .GroupBy(i => i.InvoiceId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        PaidAmounts = await Db.Payments
+            .Where(p => p.PaymentStatus == "Successful")
+            .GroupBy(p => p.InvoiceId)
+            .Select(g => new { InvoiceId = g.Key, Amount = g.Sum(p => p.Amount) })
+            .ToDictionaryAsync(g => g.InvoiceId, g => g.Amount);
+    }
+
+    private void ToggleInvoiceDetails(int invoiceId)
+    {
+        if (!ExpandedInvoiceIds.Add(invoiceId))
+            ExpandedInvoiceIds.Remove(invoiceId);
+    }
+
+    private void UpdateSelectedService(int appointmentId, string? value)
+    {
+        if (int.TryParse(value, out var id))
+            SelectedServiceIds[appointmentId] = id;
+    }
+
+    private void UpdateQuantity(int appointmentId, string? value)
+    {
+        if (int.TryParse(value, out var quantity))
+            SelectedQuantities[appointmentId] = quantity;
+    }
+
+    private async Task AddService(int appointmentId)
+    {
+        try
+        {
+            var serviceId = SelectedServiceIds.GetValueOrDefault(appointmentId);
+            var quantity = SelectedQuantities.GetValueOrDefault(appointmentId);
+
+            if (serviceId <= 0 || quantity <= 0)
+                throw new InvalidOperationException("Select a valid service and quantity.");
+
+            var appointment = await Db.Set<Appointment>()
+                .FirstOrDefaultAsync(a => a.AppointmentId == appointmentId);
+
+            if (appointment == null || appointment.Status == "Cancelled")
+                throw new InvalidOperationException("This appointment cannot be billed.");
+
+            if (await Db.Invoices.AnyAsync(i => i.AppointmentId == appointmentId))
+                throw new InvalidOperationException("An invoice already exists for this appointment.");
+
+            var service = await Db.Set<Service>()
+                .FirstOrDefaultAsync(s => s.ServiceId == serviceId && s.IsActive);
+
+            if (service == null)
+                throw new InvalidOperationException("Selected service is unavailable.");
+
+            Db.Set<AppointmentService>().Add(new AppointmentService
+            {
+                AppointmentId = appointmentId,
+                ServiceId = service.ServiceId,
+                Quantity = quantity,
+                UnitPrice = service.Price
+            });
+
+            await Db.SaveChangesAsync();
+
+            Message = $"{service.ServiceName} added successfully.";
+            IsError = false;
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            Message = ex.Message;
+            IsError = true;
+        }
+    }
+
+    private async Task GenerateInvoice(int appointmentId)
+    {
+        try
+        {
+            var invoice = await Billing.GenerateAppointmentInvoiceAsync(appointmentId);
+            Message = $"Invoice {invoice.InvoiceNumber} generated successfully.";
+            IsError = false;
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            Message = ex.Message;
+            IsError = true;
+        }
+    }
+
+    private async Task GenerateEmergencyInvoice(int emergencyCaseId)
+    {
+        try
+        {
+            var treatmentCharge = EmergencyTreatmentCharges.GetValueOrDefault(emergencyCaseId);
+            var invoice = await Billing.GenerateEmergencyInvoiceAsync(
+                emergencyCaseId,
+                treatmentCharge);
+
+            Message = $"Emergency invoice {invoice.InvoiceNumber} generated successfully.";
+            IsError = false;
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            Message = ex.Message;
+            IsError = true;
+        }
+    }
+    private void SelectInvoice(int invoiceId)
+    {
+        SelectedInvoiceId = invoiceId;
+        PaymentInput = new PaymentForm();
+        Message = string.Empty;
+    }
+
+    private async Task SavePayment()
+    {
+        try
+        {
+            if (!SelectedInvoiceId.HasValue)
+                return;
+
+            await Billing.RecordPaymentAsync(
+                SelectedInvoiceId.Value,
+                PaymentInput.Amount,
+                PaymentInput.Method,
+                PaymentInput.Reference);
+
+            Message = "Payment recorded successfully.";
+            IsError = false;
+            SelectedInvoiceId = null;
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            Message = ex.Message;
+            IsError = true;
+        }
+    }
+
+    private class PaymentForm
+    {
+        public decimal Amount { get; set; }
+        public string Method { get; set; } = "Cash";
+        public string? Reference { get; set; }
+    }
+}

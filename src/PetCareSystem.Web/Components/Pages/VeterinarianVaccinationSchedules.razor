@@ -1,0 +1,543 @@
+@page "/doctor/vaccination-schedules"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Veterinarian")]
+
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.EntityFrameworkCore
+@using PetCareSystem.Web.Data
+@using PetCareSystem.Web.Models
+
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ApplicationDbContext DbContext
+@inject ILogger<VeterinarianVaccinationSchedules> Logger
+
+<PageTitle>Vaccination Catalogue Approval</PageTitle>
+
+<div class="container-fluid py-4">
+    <h2>Vaccination Catalogue Approval</h2>
+    <p class="text-muted">
+        Review and approve vaccines for each species. Vaccine information and
+        research references are provided by the system. No manual template entry is required.
+    </p>
+
+    @if (IsLoading)
+    {
+        <p>Loading vaccine catalogue...</p>
+    }
+    else
+    {
+        @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+        {
+            <div class="alert alert-danger">@ErrorMessage</div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(SuccessMessage))
+        {
+            <div class="alert alert-success">@SuccessMessage</div>
+        }
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card shadow-sm p-3">
+                    <h6>Total species</h6>
+                    <h3>@SpeciesList.Count</h3>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm p-3">
+                    <h6>Vaccines awaiting approval</h6>
+                    <h3>@VaccineList.Count(v => v.ReviewStatus == "Pending Approval")</h3>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm p-3">
+                    <h6>Approved vaccines</h6>
+                    <h3>@VaccineList.Count(v => v.ReviewStatus == "Approved")</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm p-3 mb-4">
+            <label class="form-label fw-bold" for="speciesSelect">
+                Select Animal Species
+            </label>
+
+            <select id="speciesSelect" class="form-select" @bind="SelectedSpeciesId">
+                <option value="">-- Select Species --</option>
+                @foreach (var item in SpeciesList)
+                {
+                    <option value="@item.SpeciesId">@item.SpeciesName</option>
+                }
+            </select>
+        </div>
+
+        @if (SelectedSpeciesId.HasValue)
+        {
+            var species = SpeciesList.FirstOrDefault(s => s.SpeciesId == SelectedSpeciesId.Value);
+
+            if (species != null)
+            {
+                var speciesVaccines = VaccineList
+                    .Where(v => v.SpeciesId == species.SpeciesId)
+                    .OrderBy(v => v.VaccineName)
+                    .ToList();
+
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">@species.SpeciesName</h5>
+                        <span class="badge bg-primary">@speciesVaccines.Count vaccines</span>
+                    </div>
+
+                    <div class="card-body">
+                        @if (speciesVaccines.Count == 0)
+                        {
+                            <div class="alert alert-warning mb-0">
+                                <strong>Vaccination Information Unavailable</strong>
+                                <p class="mb-0 mt-2">
+                                    We currently don't have verified vaccination information for this species.
+                                    Please book a consultation with a veterinarian for a personalised
+                                    vaccination assessment and recommendations.
+                                </p>
+                            </div>
+                        }
+                        else
+                        {
+                            @foreach (var vaccine in speciesVaccines)
+                            {
+                                <div class="border rounded p-3 mb-3">
+                                    <div class="d-flex justify-content-between flex-wrap gap-2">
+                                        <h5>@vaccine.VaccineName</h5>
+
+                                        @if (vaccine.ReviewStatus == "Approved")
+                                        {
+                                            <span class="badge bg-success">Approved</span>
+                                        }
+                                        else if (vaccine.ReviewStatus == "Rejected")
+                                        {
+                                            <span class="badge bg-danger">Rejected</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark">Pending Approval</span>
+                                        }
+                                    </div>
+
+                                    <p class="mb-2">@vaccine.Description</p>
+                                    <p><strong>Protects against:</strong> @(vaccine.DiseasePrevented ?? "Not specified")</p>
+                                    <p><strong>Recommended age:</strong> @(vaccine.RecommendedAge ?? "Not verified")</p>
+                                    <p><strong>Dose:</strong> @(vaccine.RecommendedDose ?? "Not verified")</p>
+                                    <p><strong>Administration route:</strong> @(vaccine.AdministrationRoute ?? "Not verified")</p>
+                                    <p><strong>Recommended interval:</strong> @(vaccine.RecommendedInterval ?? "Not verified")</p>
+                                    <p><strong>Verification:</strong> @vaccine.VerificationStatus</p>
+
+                                    <div class="border-top pt-2 mt-2">
+                                        <strong>Research reference</strong>
+                                        <p class="mb-1">@(vaccine.SourceName ?? "Source unavailable")</p>
+
+                                        @if (!string.IsNullOrWhiteSpace(vaccine.SourceReference))
+                                        {
+                                            <a href="@vaccine.SourceReference" target="_blank" rel="noopener noreferrer">
+                                                View veterinary reference
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-danger">Reference unavailable</span>
+                                        }
+
+                                        @if (vaccine.ResearchDate.HasValue)
+                                        {
+                                            <p class="small text-muted mb-0">
+                                                Research date: @vaccine.ResearchDate.Value.ToString("dd MMM yyyy")
+                                            </p>
+                                        }
+                                    </div>
+
+                                    @if (vaccine.ReviewStatus == "Pending Approval")
+                                    {
+                                        <div class="mt-3 d-flex gap-2">
+                                            <button class="btn btn-success"
+                                                    disabled="@IsSaving"
+                                                    @onclick="() => ApproveVaccineAsync(vaccine.VaccineId)">
+                                                Approve Vaccine
+                                            </button>
+
+                                            <button class="btn btn-outline-danger"
+                                                    disabled="@IsSaving"
+                                                    @onclick="() => RejectVaccineAsync(vaccine.VaccineId)">
+                                                Reject
+                                            </button>
+                                        </div>
+                                    }
+                                    else if (vaccine.ReviewStatus == "Rejected")
+                                    {
+                                        <button class="btn btn-outline-secondary mt-3"
+                                                disabled="@IsSaving"
+                                                @onclick="() => RestoreVaccineAsync(vaccine.VaccineId)">
+                                            Return to Pending Review
+                                        </button>
+                                    }
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="alert alert-info">
+                Please select an animal species to view its vaccine catalogue and review the available vaccines.
+            </div>
+        }
+    }
+        @if (SelectedSpeciesId.HasValue)
+        {
+            var templates = TemplateList.Where(t => t.SpeciesId == SelectedSpeciesId.Value).ToList();
+            <div class="card shadow-sm mt-4">
+                <div class="card-header"><h5 class="mb-0">Vaccination Schedule Template Approval</h5></div>
+                <div class="card-body">
+                    @if (!templates.Any())
+                    {
+                        <p class="text-muted">No schedule templates available for this species.</p>
+                    }
+                    @foreach (var template in templates)
+                    {
+                        <div class="border rounded p-3 mb-3">
+                            <div class="d-flex justify-content-between">
+                                <h6>@template.Vaccine.VaccineName - @template.DoseName</h6>
+                                @if (template.IsApproved && template.IsActive)
+                                {
+                                    <span class="badge bg-success">Approved</span>
+                                }
+                                else if (!template.IsActive)
+                                {
+                                    <span class="badge bg-secondary">Inactive / Archived</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning text-dark">Pending Approval</span>
+                                }
+                            </div>
+                            <p><strong>Recommended age:</strong>
+                                @(template.RecommendedAgeDays.HasValue ? $"{template.RecommendedAgeDays.Value} days" : $"{template.RecommendedAgeMonths} months")
+                            </p>
+                            <p><strong>Source:</strong> @(template.SourceName ?? "Not specified")</p>
+                            @if (!string.IsNullOrWhiteSpace(template.SourceReference))
+                            {
+                                <a href="@template.SourceReference" target="_blank" rel="noopener noreferrer">View veterinary reference</a>
+                            }
+                            @if (template.IsActive && !template.IsApproved)
+                            {
+                                <button class="btn btn-success mt-2" disabled="@IsSaving" @onclick="() => ApproveTemplateAsync(template.VaccinationScheduleTemplateId)">Approve Schedule</button>
+                                <button class="btn btn-outline-danger mt-2" disabled="@IsSaving" @onclick="() => RejectTemplateAsync(template.VaccinationScheduleTemplateId)">Reject</button>
+                            }
+                            else if (!template.IsActive)
+                            {
+                                <button class="btn btn-outline-secondary mt-2" disabled="@IsSaving" @onclick="() => RestoreTemplateAsync(template.VaccinationScheduleTemplateId)">Return to Pending Review</button>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+</div>
+
+@code {
+    private VeterinarianProfile? Veterinarian;
+    private List<Species> SpeciesList = new();
+    private int? SelectedSpeciesId;
+    private List<Vaccine> VaccineList = new();
+    private List<VaccinationScheduleTemplate> TemplateList = new();
+
+    private bool IsLoading = true;
+    private bool IsSaving;
+    private string? ErrorMessage;
+    private string? SuccessMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var auth = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = await UserManager.GetUserAsync(auth.User);
+
+            if (user == null)
+            {
+                ErrorMessage = "Unable to identify the logged-in veterinarian.";
+                return;
+            }
+
+            Veterinarian = await DbContext.VeterinarianProfiles
+                .FirstOrDefaultAsync(v => v.UserId == user.Id && v.IsActive);
+
+            if (Veterinarian == null)
+            {
+                ErrorMessage = "No active veterinarian profile is linked to this account.";
+                return;
+            }
+
+            await LoadCatalogueAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load vaccine catalogue.");
+            ErrorMessage = "Unable to load the vaccine catalogue.";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task LoadCatalogueAsync()
+    {
+        SpeciesList = await DbContext.Species
+            .AsNoTracking()
+            .Where(s => s.IsActive)
+            .OrderBy(s => s.SpeciesName)
+            .ToListAsync();
+
+        VaccineList = await DbContext.Vaccines
+            .AsNoTracking()
+            .OrderBy(v => v.SpeciesId)
+            .ThenBy(v => v.VaccineName)
+            .ToListAsync();
+
+        TemplateList = await DbContext.VaccinationScheduleTemplates
+            .Include(t => t.Species)
+            .Include(t => t.Vaccine)
+            .OrderBy(t => t.Species.SpeciesName)
+            .ThenBy(t => t.Vaccine.VaccineName)
+            .ThenBy(t => t.DoseNumber)
+            .ToListAsync();
+    }
+
+    private async Task ApproveVaccineAsync(int vaccineId)
+    {
+        if (IsSaving || Veterinarian == null)
+            return;
+
+        ErrorMessage = null;
+        SuccessMessage = null;
+        IsSaving = true;
+
+        try
+        {
+            var vaccine = await DbContext.Vaccines
+                .FirstOrDefaultAsync(v => v.VaccineId == vaccineId);
+
+            if (vaccine == null || !vaccine.IsActive)
+            {
+                ErrorMessage = "This vaccine is unavailable.";
+                return;
+            }
+
+            if (vaccine.ReviewStatus != "Pending Approval")
+            {
+                ErrorMessage = "This vaccine is no longer awaiting approval.";
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(vaccine.SourceName) ||
+                string.IsNullOrWhiteSpace(vaccine.SourceReference))
+            {
+                ErrorMessage = "A research reference is required before approval.";
+                return;
+            }
+
+            vaccine.ReviewStatus = "Approved";
+            vaccine.ApprovedByVeterinarianProfileId =
+                Veterinarian.VeterinarianProfileId;
+            vaccine.ApprovedAt = DateTime.UtcNow;
+
+            await DbContext.SaveChangesAsync();
+            await LoadCatalogueAsync();
+
+            SuccessMessage = "Vaccine approved for its species.";
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to approve vaccine {VaccineId}.", vaccineId);
+            ErrorMessage = "Unable to approve this vaccine.";
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+
+    private async Task RejectVaccineAsync(int vaccineId)
+    {
+        if (IsSaving || Veterinarian == null)
+            return;
+
+        ErrorMessage = null;
+        SuccessMessage = null;
+        IsSaving = true;
+
+        try
+        {
+            var vaccine = await DbContext.Vaccines
+                .FirstOrDefaultAsync(v => v.VaccineId == vaccineId);
+
+            if (vaccine == null ||
+                vaccine.ReviewStatus != "Pending Approval")
+            {
+                ErrorMessage = "This vaccine is unavailable for rejection.";
+                return;
+            }
+
+            vaccine.ReviewStatus = "Rejected";
+            vaccine.IsActive = false;
+            vaccine.ApprovedByVeterinarianProfileId = null;
+            vaccine.ApprovedAt = null;
+
+            await DbContext.SaveChangesAsync();
+            await LoadCatalogueAsync();
+
+            SuccessMessage = "Vaccine rejected. Existing vaccination records are preserved.";
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to reject vaccine {VaccineId}.", vaccineId);
+            ErrorMessage = "Unable to reject this vaccine.";
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+
+    private async Task RestoreVaccineAsync(int vaccineId)
+    {
+        if (IsSaving)
+            return;
+
+        ErrorMessage = null;
+        SuccessMessage = null;
+        IsSaving = true;
+
+        try
+        {
+            var vaccine = await DbContext.Vaccines
+                .FirstOrDefaultAsync(v => v.VaccineId == vaccineId);
+
+            if (vaccine == null || vaccine.ReviewStatus != "Rejected")
+            {
+                ErrorMessage = "This vaccine cannot be restored.";
+                return;
+            }
+
+            vaccine.ReviewStatus = "Pending Approval";
+            vaccine.IsActive = true;
+
+            await DbContext.SaveChangesAsync();
+            await LoadCatalogueAsync();
+
+            SuccessMessage = "Vaccine returned to pending review.";
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to restore vaccine {VaccineId}.", vaccineId);
+            ErrorMessage = "Unable to restore this vaccine.";
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+    private async Task ApproveTemplateAsync(int id)
+    {
+        if (IsSaving || Veterinarian == null) return;
+        IsSaving = true;
+        ErrorMessage = null;
+        SuccessMessage = null;
+        try
+        {
+            var t = await DbContext.VaccinationScheduleTemplates.Include(x => x.Vaccine)
+                .FirstOrDefaultAsync(x => x.VaccinationScheduleTemplateId == id);
+            if (t == null || !t.IsActive || t.IsApproved)
+            {
+                ErrorMessage = "Schedule template unavailable.";
+                return;
+            }
+            if (!t.Vaccine.IsActive || t.Vaccine.ReviewStatus != "Approved")
+            {
+                ErrorMessage = "Approve the associated vaccine first.";
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(t.SourceName) || string.IsNullOrWhiteSpace(t.SourceReference))
+            {
+                ErrorMessage = "A veterinary research reference is required.";
+                return;
+            }
+            t.IsApproved = true;
+            t.ApprovedByVeterinarianProfileId = Veterinarian.VeterinarianProfileId;
+            t.ApprovedAt = DateTime.UtcNow;
+            await DbContext.SaveChangesAsync();
+            await LoadCatalogueAsync();
+            SuccessMessage = "Vaccination schedule template approved.";
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to approve template {Id}.", id);
+            ErrorMessage = "Unable to approve schedule template.";
+        }
+        finally { IsSaving = false; }
+    }
+
+    private async Task RejectTemplateAsync(int id)
+    {
+        if (IsSaving) return;
+        IsSaving = true;
+        ErrorMessage = null;
+        SuccessMessage = null;
+        try
+        {
+            var t = await DbContext.VaccinationScheduleTemplates.FirstOrDefaultAsync(x => x.VaccinationScheduleTemplateId == id);
+            if (t == null || !t.IsActive || t.IsApproved) return;
+            t.IsActive = false;
+            t.IsApproved = false;
+            t.ApprovedByVeterinarianProfileId = null;
+            t.ApprovedAt = null;
+            await DbContext.SaveChangesAsync();
+            await LoadCatalogueAsync();
+            SuccessMessage = "Schedule template rejected.";
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to reject template {Id}.", id);
+            ErrorMessage = "Unable to reject schedule template.";
+        }
+        finally { IsSaving = false; }
+    }
+
+    private async Task RestoreTemplateAsync(int id)
+    {
+        if (IsSaving) return;
+        IsSaving = true;
+        ErrorMessage = null;
+        SuccessMessage = null;
+        try
+        {
+            var t = await DbContext.VaccinationScheduleTemplates.FirstOrDefaultAsync(x => x.VaccinationScheduleTemplateId == id);
+            if (t == null || t.IsActive) return;
+            t.IsActive = true;
+            t.IsApproved = false;
+            t.ApprovedByVeterinarianProfileId = null;
+            t.ApprovedAt = null;
+            await DbContext.SaveChangesAsync();
+            await LoadCatalogueAsync();
+            SuccessMessage = "Schedule template returned to pending review.";
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to restore template {Id}.", id);
+            ErrorMessage = "Unable to restore schedule template.";
+        }
+        finally { IsSaving = false; }
+    }
+}
+

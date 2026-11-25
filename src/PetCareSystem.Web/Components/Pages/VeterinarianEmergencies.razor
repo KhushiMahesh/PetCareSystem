@@ -1,0 +1,253 @@
+﻿@page "/doctor/emergencies"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Veterinarian")]
+
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using PetCareSystem.Web.Data
+@using PetCareSystem.Web.Models
+
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ApplicationDbContext DbContext
+
+<PageTitle>Emergency Case Management</PageTitle>
+
+<div class="container-fluid py-4">
+    <h2>Emergency Case Management</h2>
+    <p class="text-muted">Register, triage and manage emergency patients.</p>
+
+    @if (!string.IsNullOrWhiteSpace(Message))
+    {
+        <div class="alert alert-info">@Message</div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <div class="alert alert-danger">@ErrorMessage</div>
+    }
+
+    @if (IsLoading)
+    {
+        <p>Loading emergency cases...</p>
+    }
+    else if (Veterinarian is null)
+    {
+        <div class="alert alert-danger">Veterinarian profile not found.</div>
+    }
+    else
+    {
+        <div class="row g-3 mb-4">
+            <div class="col-md-3"><div class="card p-3"><small>Waiting</small><h3>@Cases.Count(c => c.CaseStatus == "Waiting")</h3></div></div>
+            <div class="col-md-3"><div class="card p-3"><small>Critical</small><h3>@Cases.Count(c => c.TriagePriority == "Critical" && c.CaseStatus != "Completed")</h3></div></div>
+            <div class="col-md-3"><div class="card p-3"><small>In Treatment</small><h3>@Cases.Count(c => c.CaseStatus == "InTreatment")</h3></div></div>
+            <div class="col-md-3"><div class="card p-3"><small>Completed</small><h3>@Cases.Count(c => c.CaseStatus == "Completed")</h3></div></div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5>Register Emergency Case</h5>
+                <EditForm Model="NewCase" OnValidSubmit="RegisterCaseAsync">
+                    <DataAnnotationsValidator />
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Pet</label>
+                            <InputSelect class="form-select" @bind-Value="NewCase.PetId">
+                                <option value="0">Select pet</option>
+                                @foreach (var pet in Pets)
+                                {
+                                    <option value="@pet.PetId">@pet.PetName (Pet #@pet.PetId)</option>
+                                }
+                            </InputSelect>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Triage Priority</label>
+                            <InputSelect class="form-select" @bind-Value="NewCase.TriagePriority">
+                                <option>Critical</option>
+                                <option>High</option>
+                                <option>Moderate</option>
+                                <option>Low</option>
+                            </InputSelect>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Symptoms</label>
+                            <InputText class="form-control" @bind-Value="NewCase.Symptoms" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Additional Notes</label>
+                            <InputTextArea class="form-control" @bind-Value="NewCase.AdditionalNotes" />
+                        </div>
+                        <div class="col-12">
+                            <button class="btn btn-danger" type="submit">Register Emergency</button>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5>Emergency Cases</h5>
+                @if (Cases.Count == 0)
+                {
+                    <p class="text-muted">No emergency cases registered.</p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Case</th><th>Pet</th><th>Owner</th><th>Symptoms</th>
+                                    <th>Priority</th><th>Status</th><th>Arrival</th><th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Cases)
+                                {
+                                    <tr>
+                                        <td>#@item.EmergencyCaseId</td>
+                                        <td>@item.Pet.PetName</td>
+                                        <td>@item.Owner.FullName</td>
+                                        <td>@item.Symptoms</td>
+                                        <td>
+                                            <select class="form-select form-select-sm" @bind="item.TriagePriority" @bind:after="() => SaveCaseAsync(item)">
+                                                <option>Critical</option><option>High</option><option>Moderate</option><option>Low</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select class="form-select form-select-sm" @bind="item.CaseStatus" @bind:after="() => SaveCaseAsync(item)">
+                                                <option>Waiting</option><option>Assigned</option><option>InTreatment</option><option>Completed</option><option>Transferred</option>
+                                            </select>
+                                        </td>
+                                        <td>@item.ArrivalTime.ToLocalTime().ToString("dd MMM yyyy HH:mm")</td>
+                                        <td>
+                                            @if (item.VeterinarianProfileId is null)
+                                            {
+                                                <button class="btn btn-sm btn-outline-primary" @onclick="() => AssignToMeAsync(item)">Assign to me</button>
+                                            }
+                                            else if (item.VeterinarianProfileId == Veterinarian.VeterinarianProfileId)
+                                            {
+                                                <span class="badge bg-success">Assigned to me</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">Assigned</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private VeterinarianProfile? Veterinarian;
+    private List<Pet> Pets = new();
+    private List<EmergencyCase> Cases = new();
+    private EmergencyCase NewCase = new();
+    private bool IsLoading = true;
+    private string? Message;
+    private string? ErrorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = await UserManager.GetUserAsync(state.User);
+
+            if (user is null) return;
+
+            Veterinarian = await DbContext.VeterinarianProfiles
+                .FirstOrDefaultAsync(v => v.UserId == user.Id);
+
+            if (Veterinarian is null) return;
+
+            Pets = await DbContext.Pets
+                .Include(p => p.Owner)
+                .OrderBy(p => p.PetName)
+                .ToListAsync();
+
+            await LoadCasesAsync();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task LoadCasesAsync()
+    {
+        Cases = await DbContext.EmergencyCases
+            .Include(e => e.Pet)
+            .Include(e => e.Owner)
+            .OrderByDescending(e => e.TriagePriority == "Critical")
+            .ThenBy(e => e.ArrivalTime)
+            .ToListAsync();
+    }
+
+    private async Task RegisterCaseAsync()
+    {
+        ErrorMessage = null;
+        Message = null;
+
+        if (NewCase.PetId <= 0 || string.IsNullOrWhiteSpace(NewCase.Symptoms))
+        {
+            ErrorMessage = "Select a pet and enter the symptoms.";
+            return;
+        }
+
+        var pet = Pets.FirstOrDefault(p => p.PetId == NewCase.PetId);
+        if (pet is null)
+        {
+            ErrorMessage = "Selected pet was not found.";
+            return;
+        }
+
+        var emergency = new EmergencyCase
+        {
+            PetId = pet.PetId,
+            OwnerProfileId = pet.OwnerProfileId,
+            VeterinarianProfileId = Veterinarian!.VeterinarianProfileId,
+            Symptoms = NewCase.Symptoms.Trim(),
+            AdditionalNotes = NewCase.AdditionalNotes?.Trim(),
+            TriagePriority = NewCase.TriagePriority,
+            CaseStatus = "InTreatment",
+            ArrivalTime = DateTime.UtcNow,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        DbContext.EmergencyCases.Add(emergency);
+        await DbContext.SaveChangesAsync();
+
+        NewCase = new EmergencyCase();
+        Message = $"Emergency case #{emergency.EmergencyCaseId} registered and assigned to you.";
+        await LoadCasesAsync();
+    }
+
+    private async Task AssignToMeAsync(EmergencyCase item)
+    {
+        item.VeterinarianProfileId = Veterinarian!.VeterinarianProfileId;
+        item.CaseStatus = "Assigned";
+        item.UpdatedAt = DateTime.UtcNow;
+        await DbContext.SaveChangesAsync();
+        Message = $"Emergency case #{item.EmergencyCaseId} assigned to you.";
+    }
+
+    private async Task SaveCaseAsync(EmergencyCase item)
+    {
+        item.UpdatedAt = DateTime.UtcNow;
+        await DbContext.SaveChangesAsync();
+        Message = $"Emergency case #{item.EmergencyCaseId} updated.";
+    }
+}

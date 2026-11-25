@@ -1,3 +1,4 @@
+
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -7,59 +8,71 @@ using PetCareSystem.Web.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Razor Components
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddCascadingAuthenticationState();
+
 builder.Services.AddScoped<IdentityRedirectManager>();
-builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 
+builder.Services.AddScoped<
+    AuthenticationStateProvider,
+    IdentityRevalidatingAuthenticationStateProvider>();
+
+// Authentication
 builder.Services.AddAuthentication(options =>
-    {
-        options.DefaultScheme = IdentityConstants.ApplicationScheme;
-        options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
-    })
-    .AddIdentityCookies();
+{
+    options.DefaultScheme = IdentityConstants.ApplicationScheme;
+    options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+})
+.AddIdentityCookies();
 
-// PostgreSQL database connection
+// PostgreSQL
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+    ?? throw new InvalidOperationException(
+        "Connection string 'DefaultConnection' not found.");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
 
+builder.Services.AddScoped<
+    PetCareSystem.Web.Services.VaccinationScheduleService>();
+builder.Services.AddScoped<PetCareSystem.Web.Services.BillingService>();
+
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-// ASP.NET Core Identity with Role Management
+// ASP.NET Core Identity
 builder.Services.AddIdentityCore<ApplicationUser>(options =>
-    {
-        options.SignIn.RequireConfirmedAccount = true;
-        options.Stores.SchemaVersion = IdentitySchemaVersions.Version3;
-    })
-    .AddRoles<IdentityRole>()
-    .AddEntityFrameworkStores<ApplicationDbContext>()
-    .AddSignInManager()
-    .AddDefaultTokenProviders();
+{
+    options.SignIn.RequireConfirmedAccount = true;
+    options.Stores.SchemaVersion = IdentitySchemaVersions.Version3;
+})
+.AddRoles<IdentityRole>()
+.AddEntityFrameworkStores<ApplicationDbContext>()
+.AddSignInManager()
+.AddDefaultTokenProviders();
 
-builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
+builder.Services.AddSingleton<
+    IEmailSender<ApplicationUser>,
+    IdentityNoOpEmailSender>();
 
 var app = builder.Build();
 
-// Initialize database reference data and application roles
+// Initialize database and seed application data
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
 
-    // Seed hospital reference data
-    var dbContext = services
-        .GetRequiredService<ApplicationDbContext>();
+    var dbContext =
+        services.GetRequiredService<ApplicationDbContext>();
 
+    // Seed departments, specialisations, species, breeds and services
     await DbInitializer.SeedAsync(dbContext);
 
     // Create application roles
-    var roleManager = services
-        .GetRequiredService<RoleManager<IdentityRole>>();
+    var roleManager =
+        services.GetRequiredService<RoleManager<IdentityRole>>();
 
     string[] roles =
     [
@@ -72,12 +85,30 @@ using (var scope = app.Services.CreateScope())
     {
         if (!await roleManager.RoleExistsAsync(role))
         {
-            await roleManager.CreateAsync(new IdentityRole(role));
+            var result = await roleManager.CreateAsync(
+                new IdentityRole(role));
+
+            if (!result.Succeeded)
+            {
+                throw new InvalidOperationException(
+                    $"Could not create role {role}: " +
+                    string.Join("; ",
+                        result.Errors.Select(e => e.Description)));
+            }
         }
     }
+
+    // Seed 30 pre-registered veterinarians
+    var userManager =
+        services.GetRequiredService<UserManager<ApplicationUser>>();
+
+    await VeterinarianSeeder.SeedAsync(
+        dbContext,
+        userManager,
+        app.Configuration);
 }
 
-// Configure the HTTP request pipeline.
+// HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseMigrationsEndPoint();
@@ -88,17 +119,26 @@ else
     app.UseHsts();
 }
 
-app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
 
-app.UseAntiforgery();
+app.UseStaticFiles();
 
-app.MapStaticAssets();
+app.UseRouting();
+
+// Handle status codes before authentication and antiforgery
+app.UseStatusCodePagesWithReExecute(
+    "/not-found",
+    createScopeForStatusCodePages: true);
+
+app.UseAuthentication();
+
+app.UseAuthorization();
+
+app.UseAntiforgery();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-// Identity endpoints
 app.MapAdditionalIdentityEndpoints();
 
 app.Run();

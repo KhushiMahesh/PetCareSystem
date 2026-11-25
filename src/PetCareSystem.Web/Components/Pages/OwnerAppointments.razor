@@ -1,0 +1,853 @@
+﻿@page "/owner/appointments"
+
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "PetOwner")]
+
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using System.Data
+@using PetCareSystem.Web.Data
+@using PetCareSystem.Web.Models
+
+@inject UserManager<ApplicationUser> UserManager
+@inject ApplicationDbContext DbContext
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager Navigation
+@inject ILogger<OwnerAppointments> Logger
+
+<PageTitle>Appointments | PetCareSystem</PageTitle>
+
+<div class="container py-4">
+
+    <h2 class="mb-2">Book an Appointment</h2>
+    <p class="text-muted mb-4">
+        Select your pet, specialist and an available appointment slot.
+    </p>
+
+    @if (IsLoading)
+    {
+        <p>Loading appointment information...</p>
+    }
+    else if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <div class="alert alert-danger">@ErrorMessage</div>
+    }
+    else
+    {
+        @if (!string.IsNullOrWhiteSpace(SuccessMessage))
+        {
+            <div class="alert alert-success">@SuccessMessage</div>
+        }
+
+        @if (Pets.Count == 0)
+        {
+            <div class="alert alert-info">
+                You have not registered any pets yet.
+                <a href="/owner/pets">Register a pet first.</a>
+            </div>
+        }
+        else
+        {
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+
+                    <h4 class="mb-4">Appointment Details</h4>
+
+                    <div class="row g-3">
+
+                        <div class="col-md-6">
+                            <label class="form-label">Select Pet *</label>
+                            <InputSelect class="form-select"
+                                         @bind-Value="SelectedPetId"
+                                         @bind-Value:after="OnPetChanged">
+                                <option value="0">Choose your pet</option>
+                                @foreach (var pet in Pets)
+                                {
+                                    <option value="@pet.PetId">
+                                        @pet.PetName (@pet.Species.SpeciesName)
+                                    </option>
+                                }
+                            </InputSelect>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Department *</label>
+                            <InputSelect class="form-select"
+                                         @bind-Value="SelectedDepartmentId"
+                                         @bind-Value:after="OnDepartmentChanged">
+                                <option value="0">Choose department</option>
+                                @foreach (var department in Departments)
+                                {
+                                    <option value="@department.DepartmentId">
+                                        @department.DepartmentName
+                                    </option>
+                                }
+                            </InputSelect>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Specialisation *</label>
+                            <InputSelect class="form-select"
+                                         @bind-Value="SelectedSpecialisationId"
+                                         @bind-Value:after="OnSpecialisationChanged"
+                                         disabled="@(SelectedDepartmentId == 0)">
+                                <option value="0">Choose specialisation</option>
+                                @foreach (var item in Specialisations)
+                                {
+                                    <option value="@item.SpecialisationId">
+                                        @item.SpecialisationName
+                                    </option>
+                                }
+                            </InputSelect>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Veterinarian *</label>
+                            <InputSelect class="form-select"
+                                         @bind-Value="SelectedDoctorId"
+                                         @bind-Value:after="OnDoctorChanged"
+                                         disabled="@(SelectedSpecialisationId == 0)">
+                                <option value="0">Choose veterinarian</option>
+                                @foreach (var doctor in Doctors)
+                                {
+                                    <option value="@doctor.VeterinarianProfileId">
+                                        @doctor.FullName
+                                    </option>
+                                }
+                            </InputSelect>
+
+                            @if (SelectedSpecialisationId > 0 && Doctors.Count == 0)
+                            {
+                                <small class="text-danger">
+                                    No active veterinarian is registered for
+                                    this specialisation and pet species.
+                                </small>
+                            }
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Appointment Date *</label>
+                            <InputDate class="form-control"
+                                       @bind-Value="SelectedDate"
+                                       @bind-Value:after="OnDateChanged"
+                                       min="@TodayString"
+                                       disabled="@(SelectedDoctorId == 0)" />
+                        </div>
+
+                    </div>
+
+                    @if (SelectedDoctorId > 0)
+                    {
+                        <hr class="my-4" />
+
+                        <h5 class="mb-3">Available Time Slots</h5>
+
+                        @if (IsLoadingSlots)
+                        {
+                            <p>Checking availability...</p>
+                        }
+                        else if (!string.IsNullOrWhiteSpace(SlotMessage))
+                        {
+                            <div class="alert alert-info">@SlotMessage</div>
+                        }
+                        else if (AvailableSlots.Count == 0)
+                        {
+                            <div class="alert alert-warning">
+                                No available slots for this date.
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="d-flex flex-wrap gap-2">
+                                @foreach (var slot in AvailableSlots)
+                                {
+                                    <button type="button"
+                                            class="btn @(SelectedSlot == slot
+                                                ? "btn-primary"
+                                                : "btn-outline-primary")"
+                                            @onclick="() => SelectSlot(slot)">
+                                        @slot.ToString("hh:mm tt")
+                                    </button>
+                                }
+                            </div>
+                        }
+                    }
+
+                    <div class="mt-4">
+                        <label class="form-label">Reason for Appointment</label>
+                        <InputTextArea class="form-control"
+                                       @bind-Value="Reason"
+                                       rows="3"
+                                       maxlength="1000"
+                                       placeholder="Describe the reason for your visit..." />
+                    </div>
+
+                    <div class="mt-4">
+                        <button class="btn btn-primary px-4"
+                                @onclick="BookAppointment"
+                                disabled="@(IsBooking ||
+                                           SelectedPetId == 0 ||
+                                           SelectedDepartmentId == 0 ||
+                                           SelectedSpecialisationId == 0 ||
+                                           SelectedDoctorId == 0 ||
+                                           SelectedSlot == null)">
+                            @(IsBooking ? "Booking..." : "Book Appointment")
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        }
+
+        @* MY APPOINTMENTS SECTION *@
+
+        <div class="card shadow-sm border-0 mt-4">
+            <div class="card-body p-4">
+
+                <h4 class="mb-2">My Appointments</h4>
+
+                <p class="text-muted mb-4">
+                    View your upcoming and previous veterinary appointments.
+                </p>
+
+                @if (IsLoadingAppointments)
+                {
+                    <p>Loading your appointments...</p>
+                }
+                else if (MyAppointments.Count == 0)
+                {
+                    <div class="alert alert-info mb-0">
+                        You haven't booked any appointments yet.
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Appointment ID</th>
+                                    <th>Pet</th>
+                                    <th>Veterinarian</th>
+                                    <th>Specialisation</th>
+                                    <th>Date & Time</th>
+                                    <th>Reason</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                @foreach (var appointment in MyAppointments)
+                                {
+                                    <tr>
+                                        <td>
+                                            <strong>
+                                                APT-@appointment.AppointmentId.ToString("D4")
+                                            </strong>
+                                        </td>
+
+                                        <td>
+                                            <strong>@appointment.Pet.PetName</strong>
+                                            <br />
+                                            <small class="text-muted">
+                                                @appointment.Pet.Species.SpeciesName
+                                            </small>
+                                        </td>
+
+                                        <td>
+                                            @appointment.Veterinarian.FullName
+                                        </td>
+
+                                        <td>
+                                            @(appointment.Specialisation?.SpecialisationName ?? "General")
+                                        </td>
+
+                                        <td>
+                                            @UtcToIndiaTime(appointment.StartDateTime).ToString("dd MMM yyyy")
+                                            <br />
+                                            <small class="text-muted">
+                                                @UtcToIndiaTime(appointment.StartDateTime).ToString("hh:mm tt")
+                                            </small>
+                                        </td>
+
+                                        <td>
+                                            @(string.IsNullOrWhiteSpace(appointment.Reason)
+                                                ? "Not specified"
+                                                : appointment.Reason)
+                                        </td>
+
+                                        <td>
+                                            @if (appointment.Status == "Scheduled")
+                                            {
+                                                <span class="badge bg-primary">Scheduled</span>
+                                            }
+                                            else if (appointment.Status == "Completed")
+                                            {
+                                                <span class="badge bg-success">Completed</span>
+                                            }
+                                            else if (appointment.Status == "Cancelled" ||
+                                                     appointment.Status == "Canceled")
+                                            {
+                                                <span class="badge bg-danger">Cancelled</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">
+                                                    @appointment.Status
+                                                </span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+</div>
+
+@code {
+
+    private OwnerProfile? Owner;
+
+    private List<Pet> Pets = new();
+    private List<Department> Departments = new();
+    private List<Specialisation> Specialisations = new();
+    private List<VeterinarianProfile> Doctors = new();
+    private List<TimeOnly> AvailableSlots = new();
+
+    private List<Appointment> MyAppointments = new();
+
+    private int SelectedPetId;
+    private int SelectedDepartmentId;
+    private int SelectedSpecialisationId;
+    private int SelectedDoctorId;
+
+    private DateTime SelectedDate = DateTime.Today;
+    private TimeOnly? SelectedSlot;
+
+    private string? Reason;
+    private string? ErrorMessage;
+    private string? SuccessMessage;
+    private string? SlotMessage;
+
+    private bool IsLoading = true;
+    private bool IsLoadingSlots;
+    private bool IsBooking;
+    private bool IsLoadingAppointments;
+
+    private string TodayString => DateTime.Today.ToString("yyyy-MM-dd");
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var authState =
+                await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+            var user = await UserManager.GetUserAsync(authState.User);
+
+            if (user == null)
+            {
+                Navigation.NavigateTo("/Account/Login");
+                return;
+            }
+
+            Owner = await DbContext.OwnerProfiles
+                .FirstOrDefaultAsync(o => o.UserId == user.Id);
+
+            if (Owner == null)
+            {
+                ErrorMessage = "Your owner profile could not be found.";
+                return;
+            }
+
+            Pets = await DbContext.Pets
+                .Include(p => p.Species)
+                .Where(p => p.OwnerProfileId == Owner.OwnerProfileId)
+                .OrderBy(p => p.PetName)
+                .ToListAsync();
+
+            Departments = await DbContext.Departments
+                .Where(d => d.IsActive)
+                .OrderBy(d => d.DepartmentName)
+                .ToListAsync();
+
+            await LoadMyAppointments();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading appointment page.");
+            ErrorMessage = "Unable to load appointment information.";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task LoadMyAppointments()
+    {
+        if (Owner == null)
+            return;
+
+        IsLoadingAppointments = true;
+
+        try
+        {
+            MyAppointments = await DbContext.Appointments
+                .AsNoTracking()
+                .Include(a => a.Pet)
+                    .ThenInclude(p => p.Species)
+                .Include(a => a.Veterinarian)
+                .Include(a => a.Specialisation)
+                .Where(a => a.OwnerProfileId == Owner.OwnerProfileId)
+                .OrderByDescending(a => a.StartDateTime)
+                .ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading owner's appointments.");
+            MyAppointments = new();
+        }
+        finally
+        {
+            IsLoadingAppointments = false;
+        }
+    }
+
+    private async Task OnPetChanged()
+    {
+        SelectedSlot = null;
+        await LoadDoctors();
+        await LoadAvailableSlots();
+    }
+
+    private async Task OnDepartmentChanged()
+    {
+        SelectedSpecialisationId = 0;
+        SelectedDoctorId = 0;
+
+        Specialisations.Clear();
+        Doctors.Clear();
+        AvailableSlots.Clear();
+
+        SelectedSlot = null;
+        SlotMessage = null;
+
+        if (SelectedDepartmentId <= 0)
+            return;
+
+        Specialisations = await DbContext.Specialisations
+            .Where(s =>
+                s.DepartmentId == SelectedDepartmentId &&
+                s.IsActive)
+            .OrderBy(s => s.SpecialisationName)
+            .ToListAsync();
+    }
+
+    private async Task OnSpecialisationChanged()
+    {
+        SelectedDoctorId = 0;
+        Doctors.Clear();
+        AvailableSlots.Clear();
+        SelectedSlot = null;
+        SlotMessage = null;
+
+        await LoadDoctors();
+    }
+
+    private async Task LoadDoctors()
+    {
+        if (SelectedPetId <= 0 || SelectedSpecialisationId <= 0)
+        {
+            Doctors.Clear();
+            return;
+        }
+
+        var pet = Pets.FirstOrDefault(p => p.PetId == SelectedPetId);
+
+        if (pet == null)
+            return;
+
+        Doctors = await DbContext.VeterinarianProfiles
+            .Where(v =>
+                v.IsActive &&
+                DbContext.VeterinarianSpecialisations.Any(vs =>
+                    vs.VeterinarianProfileId == v.VeterinarianProfileId &&
+                    vs.SpecialisationId == SelectedSpecialisationId) &&
+                DbContext.VeterinarianSpecies.Any(vs =>
+                    vs.VeterinarianProfileId == v.VeterinarianProfileId &&
+                    vs.SpeciesId == pet.SpeciesId))
+            .OrderBy(v => v.FullName)
+            .ToListAsync();
+    }
+
+    private async Task OnDoctorChanged()
+    {
+        SelectedSlot = null;
+        await LoadAvailableSlots();
+    }
+
+    private async Task OnDateChanged()
+    {
+        SelectedSlot = null;
+        await LoadAvailableSlots();
+    }
+
+    private void SelectSlot(TimeOnly slot)
+    {
+        SelectedSlot = slot;
+    }
+
+    private async Task LoadAvailableSlots()
+    {
+        AvailableSlots.Clear();
+        SlotMessage = null;
+        SelectedSlot = null;
+
+        if (SelectedDoctorId <= 0)
+            return;
+
+        if (SelectedDate.Date < DateTime.Today)
+        {
+            SlotMessage = "Please select today or a future date.";
+            return;
+        }
+
+        IsLoadingSlots = true;
+
+        try
+        {
+            var selectedDay = DateOnly.FromDateTime(SelectedDate);
+
+            var schedule = await DbContext.VeterinarianSchedules
+                .FirstOrDefaultAsync(s =>
+                    s.VeterinarianProfileId == SelectedDoctorId &&
+                    s.DayOfWeek == SelectedDate.DayOfWeek &&
+                    s.IsAvailable);
+
+            if (schedule == null)
+            {
+                SlotMessage = "The veterinarian does not work on this day.";
+                return;
+            }
+
+            var exception = await DbContext.ScheduleExceptions
+                .FirstOrDefaultAsync(e =>
+                    e.VeterinarianProfileId == SelectedDoctorId &&
+                    e.ExceptionDate == selectedDay);
+
+            if (exception?.IsFullDayUnavailable == true)
+            {
+                SlotMessage = "The veterinarian is unavailable for the entire day.";
+                return;
+            }
+
+            var dayStart = IndiaLocalToUtc(SelectedDate.Date);
+            var dayEnd = IndiaLocalToUtc(SelectedDate.Date.AddDays(1));
+
+            var bookedAppointments = await DbContext.Appointments
+                .Where(a =>
+                    a.StartDateTime < dayEnd &&
+                    a.EndDateTime > dayStart &&
+                    a.Status != "Cancelled" &&
+                    a.Status != "Canceled" &&
+                    (
+                        a.VeterinarianProfileId == SelectedDoctorId ||
+                        a.PetId == SelectedPetId ||
+                        a.OwnerProfileId == Owner!.OwnerProfileId
+                    ))
+                .Select(a => new
+                {
+                    a.StartDateTime,
+                    a.EndDateTime
+                })
+                .ToListAsync();
+
+            var now = IndiaLocalNow();
+
+            for (var slot = schedule.StartTime;
+                 slot.AddMinutes(30) <= schedule.EndTime;
+                 slot = slot.AddMinutes(30))
+            {
+                var slotEnd = slot.AddMinutes(30);
+
+                var localStart = SelectedDate.Date.Add(slot.ToTimeSpan());
+                var localEnd = SelectedDate.Date.Add(slotEnd.ToTimeSpan());
+
+                if (localStart <= now)
+                    continue;
+
+                if (exception != null &&
+                    exception.StartTime.HasValue &&
+                    exception.EndTime.HasValue &&
+                    slot < exception.EndTime.Value &&
+                    slotEnd > exception.StartTime.Value)
+                {
+                    continue;
+                }
+
+                var startUtc = IndiaLocalToUtc(localStart);
+                var endUtc = IndiaLocalToUtc(localEnd);
+
+                var conflict = bookedAppointments.Any(a =>
+                    a.StartDateTime < endUtc &&
+                    a.EndDateTime > startUtc);
+
+                if (!conflict)
+                    AvailableSlots.Add(slot);
+            }
+
+            if (AvailableSlots.Count == 0)
+                SlotMessage = "No available slots remain for this date.";
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading available slots.");
+            SlotMessage = "Unable to check availability. Please try again.";
+        }
+        finally
+        {
+            IsLoadingSlots = false;
+        }
+    }
+
+    private async Task BookAppointment()
+    {
+        if (Owner == null || IsBooking)
+            return;
+
+        ErrorMessage = null;
+        SuccessMessage = null;
+        IsBooking = true;
+
+        await using var transaction =
+            await DbContext.Database.BeginTransactionAsync(
+                IsolationLevel.Serializable);
+
+        try
+        {
+            var pet = await DbContext.Pets
+                .FirstOrDefaultAsync(p =>
+                    p.PetId == SelectedPetId &&
+                    p.OwnerProfileId == Owner.OwnerProfileId);
+
+            if (pet == null)
+            {
+                ErrorMessage = "Please select a valid registered pet.";
+                return;
+            }
+
+            var validSpecialisation =
+                await DbContext.Specialisations.AnyAsync(s =>
+                    s.SpecialisationId == SelectedSpecialisationId &&
+                    s.DepartmentId == SelectedDepartmentId &&
+                    s.IsActive);
+
+            if (!validSpecialisation)
+            {
+                ErrorMessage = "Please select a valid specialisation.";
+                return;
+            }
+
+            var validDoctor =
+                await DbContext.VeterinarianProfiles.AnyAsync(v =>
+                    v.VeterinarianProfileId == SelectedDoctorId &&
+                    v.IsActive &&
+                    DbContext.VeterinarianSpecialisations.Any(vs =>
+                        vs.VeterinarianProfileId == v.VeterinarianProfileId &&
+                        vs.SpecialisationId == SelectedSpecialisationId) &&
+                    DbContext.VeterinarianSpecies.Any(vs =>
+                        vs.VeterinarianProfileId == v.VeterinarianProfileId &&
+                        vs.SpeciesId == pet.SpeciesId));
+
+            if (!validDoctor)
+            {
+                ErrorMessage = "The selected veterinarian is no longer available.";
+                return;
+            }
+
+            if (!SelectedSlot.HasValue)
+            {
+                ErrorMessage = "Please select an appointment time.";
+                return;
+            }
+
+            if (SelectedDate.Date < DateTime.Today)
+            {
+                ErrorMessage = "Appointment date cannot be in the past.";
+                return;
+            }
+
+            var selectedDay = DateOnly.FromDateTime(SelectedDate);
+
+            var schedule = await DbContext.VeterinarianSchedules
+                .FirstOrDefaultAsync(s =>
+                    s.VeterinarianProfileId == SelectedDoctorId &&
+                    s.DayOfWeek == SelectedDate.DayOfWeek &&
+                    s.IsAvailable);
+
+            if (schedule == null)
+            {
+                ErrorMessage = "The veterinarian is not working on this day.";
+                return;
+            }
+
+            var startTime = SelectedSlot.Value;
+            var endTime = startTime.AddMinutes(30);
+
+            if (startTime < schedule.StartTime ||
+                endTime > schedule.EndTime)
+            {
+                ErrorMessage = "The selected time is outside working hours.";
+                return;
+            }
+
+            var exception = await DbContext.ScheduleExceptions
+                .FirstOrDefaultAsync(e =>
+                    e.VeterinarianProfileId == SelectedDoctorId &&
+                    e.ExceptionDate == selectedDay);
+
+            if (exception?.IsFullDayUnavailable == true)
+            {
+                ErrorMessage = "The veterinarian is unavailable on this date.";
+                return;
+            }
+
+            if (exception != null &&
+                exception.StartTime.HasValue &&
+                exception.EndTime.HasValue &&
+                startTime < exception.EndTime.Value &&
+                endTime > exception.StartTime.Value)
+            {
+                ErrorMessage = "The selected time falls during the veterinarian's leave.";
+                return;
+            }
+
+            var localStart = SelectedDate.Date.Add(startTime.ToTimeSpan());
+            var localEnd = localStart.AddMinutes(30);
+
+            var startUtc = IndiaLocalToUtc(localStart);
+            var endUtc = IndiaLocalToUtc(localEnd);
+
+            if (startUtc <= DateTime.UtcNow)
+            {
+                ErrorMessage = "Please select a future appointment time.";
+                return;
+            }
+
+            var hasConflict = await DbContext.Appointments.AnyAsync(a =>
+                a.StartDateTime < endUtc &&
+                a.EndDateTime > startUtc &&
+                a.Status != "Cancelled" &&
+                a.Status != "Canceled" &&
+                (
+                    a.VeterinarianProfileId == SelectedDoctorId ||
+                    a.PetId == SelectedPetId ||
+                    a.OwnerProfileId == Owner.OwnerProfileId
+                ));
+
+            if (hasConflict)
+            {
+                ErrorMessage = "This slot has just become unavailable. Please select another time.";
+                return;
+            }
+
+            var appointment = new Appointment
+            {
+                OwnerProfileId = Owner.OwnerProfileId,
+                PetId = SelectedPetId,
+                VeterinarianProfileId = SelectedDoctorId,
+                SpecialisationId = SelectedSpecialisationId,
+                StartDateTime = startUtc,
+                EndDateTime = endUtc,
+                Reason = string.IsNullOrWhiteSpace(Reason)
+                    ? null
+                    : Reason.Trim(),
+                Status = "Scheduled",
+                CreatedAt = DateTime.UtcNow
+            };
+
+            DbContext.Appointments.Add(appointment);
+            await DbContext.SaveChangesAsync();
+
+            DbContext.AppointmentStatusHistories.Add(
+                new AppointmentStatusHistory
+                {
+                    AppointmentId = appointment.AppointmentId,
+                    PreviousStatus = null,
+                    NewStatus = "Scheduled",
+                    ChangedByUserId = Owner.UserId,
+                    Remarks = "Appointment booked by pet owner.",
+                    ChangedAt = DateTime.UtcNow
+                });
+
+            await DbContext.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            SuccessMessage =
+                $"Appointment booked successfully! Appointment ID: APT-{appointment.AppointmentId:D4}.";
+
+            Reason = null;
+
+            await LoadMyAppointments();
+            await LoadAvailableSlots();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error booking appointment.");
+            ErrorMessage = "Unable to complete your booking. Please try again.";
+        }
+        finally
+        {
+            IsBooking = false;
+        }
+    }
+
+    private static TimeZoneInfo GetIndiaTimeZone()
+    {
+        try
+        {
+            return TimeZoneInfo.FindSystemTimeZoneById("Asia/Kolkata");
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            return TimeZoneInfo.FindSystemTimeZoneById("India Standard Time");
+        }
+    }
+
+    private static DateTime IndiaLocalToUtc(DateTime localDateTime)
+    {
+        var unspecified = DateTime.SpecifyKind(
+            localDateTime,
+            DateTimeKind.Unspecified);
+
+        return TimeZoneInfo.ConvertTimeToUtc(
+            unspecified,
+            GetIndiaTimeZone());
+    }
+
+    private DateTime IndiaLocalNow()
+    {
+        return TimeZoneInfo.ConvertTimeFromUtc(
+            DateTime.UtcNow,
+            GetIndiaTimeZone());
+    }
+
+    private static DateTime UtcToIndiaTime(DateTime utcDateTime)
+    {
+        var utc = DateTime.SpecifyKind(
+            utcDateTime,
+            DateTimeKind.Utc);
+
+        return TimeZoneInfo.ConvertTimeFromUtc(
+            utc,
+            GetIndiaTimeZone());
+    }
+}

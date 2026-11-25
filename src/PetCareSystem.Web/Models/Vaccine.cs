@@ -1,4 +1,4 @@
-namespace PetCareSystem.Web.Models;
+﻿namespace PetCareSystem.Web.Models;
 
 public class Vaccine
 {
@@ -10,12 +10,33 @@ public class Vaccine
 
     public string? Description { get; set; }
 
+    public string? DiseasePrevented { get; set; }
+
     public string? RecommendedAge { get; set; }
+
+    public string? RecommendedDose { get; set; }
+
+    public string? AdministrationRoute { get; set; }
 
     public string? RecommendedInterval { get; set; }
 
+    public string? SourceName { get; set; }
+
+    public string? SourceReference { get; set; }
+
+    public DateOnly? ResearchDate { get; set; }
+
+    public string VerificationStatus { get; set; } = "Not Verified";
+
+    public string ReviewStatus { get; set; } = "Pending Approval";
+
+    public int? ApprovedByVeterinarianProfileId { get; set; }
+
+    public DateTime? ApprovedAt { get; set; }
+
     public bool IsActive { get; set; } = true;
 
-    // Navigation property
     public Species Species { get; set; } = null!;
+
+    public VeterinarianProfile? ApprovedByVeterinarian { get; set; }
 }

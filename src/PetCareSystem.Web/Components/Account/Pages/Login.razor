@@ -11,68 +11,215 @@
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Log in</PageTitle>
+<PageTitle>Login - PetCareSystem</PageTitle>
 
-<h1>Log in</h1>
-<div class="row">
-    <div class="col-lg-6">
-        <section>
-            <StatusMessage Message="@errorMessage" />
-            <EditForm EditContext="editContext" method="post" OnSubmit="LoginUser" FormName="login">
-                <DataAnnotationsValidator />
-                <h2>Use a local account to log in.</h2>
-                <hr />
-                <ValidationSummary class="text-danger" role="alert" />
-                <div class="form-floating mb-3">
-                    <InputText @bind-Value="Input.Email" id="Input.Email" class="form-control" autocomplete="username webauthn" aria-required="true" placeholder="name@example.com" />
-                    <label for="Input.Email" class="form-label">Email</label>
-                    <ValidationMessage For="() => Input.Email" class="text-danger" />
+@if (string.IsNullOrWhiteSpace(LoginType))
+{
+    <div class="container py-5">
+        <div class="text-center mb-5">
+            <h1>Welcome to PetCareSystem</h1>
+            <p class="text-secondary">
+                Please select how you want to access the hospital portal.
+            </p>
+        </div>
+
+        <div class="row justify-content-center g-4">
+            <div class="col-md-5">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body text-center p-5">
+                        <div style="font-size: 55px;">🐾</div>
+                        <h3 class="mt-3">Pet Owner</h3>
+                        <p class="text-secondary">
+                            Access your pets, book appointments,
+                            view medical records and manage billing.
+                        </p>
+
+                        <a href="/Account/Login?type=owner"
+                           class="btn btn-primary btn-lg w-100 mt-3">
+                            Pet Owner Login
+                        </a>
+
+                        <p class="mt-3 mb-0">
+                            New to PetCareSystem?
+                            <a href="/Account/Register">Register here</a>
+                        </p>
+                    </div>
                 </div>
-                <div class="form-floating mb-3">
-                    <InputText type="password" @bind-Value="Input.Password" id="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password" />
-                    <label for="Input.Password" class="form-label">Password</label>
-                    <ValidationMessage For="() => Input.Password" class="text-danger" />
+            </div>
+
+            <div class="col-md-5">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body text-center p-5">
+                        <div style="font-size: 55px;">🩺</div>
+                        <h3 class="mt-3">Veterinarian</h3>
+                        <p class="text-secondary">
+                            Access your appointments, patient details,
+                            medical histories and doctor dashboard.
+                        </p>
+
+                        <a href="/Account/Login?type=doctor"
+                           class="btn btn-success btn-lg w-100 mt-3">
+                            Doctor Login
+                        </a>
+
+                        <p class="text-secondary mt-3 mb-0">
+                            Registered hospital doctors only
+                        </p>
+                    </div>
                 </div>
-                <div class="checkbox mb-3">
-                    <label class="form-label">
-                        <InputCheckbox @bind-Value="Input.RememberMe" class="darker-border-checkbox form-check-input" />
-                        Remember me
-                    </label>
-                </div>
-                <div>
-                    <button type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
-                </div>
-                <hr />
-                <div class="d-flex flex-column">
-                    <span class="text-secondary mx-auto mt-2">OR</span>
-                    <PasskeySubmit Operation="PasskeyOperation.Request" Name="Input.Passkey" EmailName="Input.Email" class="btn btn-link mx-auto">Log in with a passkey</PasskeySubmit>
-                </div>
-                <hr />
-                <div>
-                    <p>
-                        <a href="Account/ForgotPassword">Forgot your password?</a>
-                    </p>
-                    <p>
-                        <a href="@(NavigationManager.GetUriWithQueryParameters("Account/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))">Register as a new user</a>
-                    </p>
-                    <p>
-                        <a href="Account/ResendEmailConfirmation">Resend email confirmation</a>
-                    </p>
-                </div>
-            </EditForm>
-        </section>
+            </div>
+        </div>
     </div>
-    <div class="col-lg-4 col-lg-offset-2">
-        <section>
-            <h3>Use another service to log in.</h3>
-            <hr />
-            <ExternalLoginPicker />
-        </section>
+}
+else
+{
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-5">
+                <div class="card shadow-sm">
+                    <div class="card-body p-4">
+
+                        @if (LoginType == "owner")
+                        {
+                            <div class="text-center mb-4">
+                                <div style="font-size: 45px;">🐾</div>
+                                <h2>Pet Owner Login</h2>
+                                <p class="text-secondary">
+                                    Sign in using your registered email and password.
+                                </p>
+                            </div>
+                        }
+                        else if (LoginType == "doctor")
+                        {
+                            <div class="text-center mb-4">
+                                <div style="font-size: 45px;">🩺</div>
+                                <h2>Veterinarian Login</h2>
+                                <p class="text-secondary">
+                                    Sign in using your hospital-issued Doctor ID and PIN.
+                                </p>
+                            </div>
+                        }
+                        else
+                        {
+                            <h2>Invalid login option</h2>
+                            <a href="/Account/Login">Back to login selection</a>
+                        }
+
+                        @if (LoginType == "owner" || LoginType == "doctor")
+                        {
+                            <StatusMessage Message="@errorMessage" />
+
+                            <EditForm EditContext="editContext"
+                                      method="post"
+                                      OnSubmit="LoginUser"
+                                      FormName="login">
+
+                                <DataAnnotationsValidator />
+
+                                <ValidationSummary class="text-danger" role="alert" />
+
+                                <div class="form-floating mb-3">
+                                    <InputText @bind-Value="Input.Email"
+                                               id="Input.Email"
+                                               class="form-control"
+                                               autocomplete="username"
+                                               aria-required="true"
+                                               placeholder="@(LoginType == "doctor" ? "Doctor ID" : "Email address")" />
+
+                                    <label for="Input.Email">
+                                        @(LoginType == "doctor" ? "Doctor ID" : "Email Address")
+                                    </label>
+
+                                    <ValidationMessage For="() => Input.Email"
+                                                       class="text-danger" />
+                                </div>
+
+                                <div class="form-floating mb-3">
+                                    <InputText type="password"
+                                               @bind-Value="Input.Password"
+                                               id="Input.Password"
+                                               class="form-control"
+                                               autocomplete="current-password"
+                                               aria-required="true"
+                                               placeholder="@(LoginType == "doctor" ? "Doctor PIN" : "Password")" />
+
+                                    <label for="Input.Password">
+                                        @(LoginType == "doctor" ? "Doctor PIN" : "Password")
+                                    </label>
+
+                                    <ValidationMessage For="() => Input.Password"
+                                                       class="text-danger" />
+                                </div>
+
+                                @if (LoginType == "owner")
+                                {
+                                    <div class="form-check mb-3">
+                                        <InputCheckbox @bind-Value="Input.RememberMe"
+                                                       class="form-check-input"
+                                                       id="rememberMe" />
+                                        <label class="form-check-label" for="rememberMe">
+                                            Remember me
+                                        </label>
+                                    </div>
+                                }
+
+                                <button type="submit"
+                                        class="btn @(LoginType == "doctor" ? "btn-success" : "btn-primary") btn-lg w-100">
+                                    @(LoginType == "doctor" ? "Doctor Sign In" : "Pet Owner Sign In")
+                                </button>
+
+                                @if (LoginType == "owner")
+                                {
+                                    <hr />
+
+                                    <div class="text-center">
+                                        <PasskeySubmit Operation="PasskeyOperation.Request"
+                                                       Name="Input.Passkey"
+                                                       EmailName="Input.Email"
+                                                       class="btn btn-link">
+                                            Log in with a passkey
+                                        </PasskeySubmit>
+                                    </div>
+
+                                    <hr />
+
+                                    <div class="text-center">
+                                        <p>
+                                            <a href="Account/ForgotPassword">
+                                                Forgot your password?
+                                            </a>
+                                        </p>
+
+                                        <p>
+                                            <a href="Account/ResendEmailConfirmation">
+                                                Resend email confirmation
+                                            </a>
+                                        </p>
+
+                                        <p>
+                                            Don't have an account?
+                                            <a href="Account/Register">Register here</a>
+                                        </p>
+                                    </div>
+                                }
+                            </EditForm>
+                        }
+
+                        <div class="text-center mt-3">
+                            <a href="/Account/Login">
+                                ← Back to login selection
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-</div>
+}
 
 @code {
     private string? errorMessage;
+
     private EditContext editContext = default!;
 
     [CascadingParameter]
@@ -80,6 +227,9 @@
 
     [SupplyParameterFromForm]
     private InputModel Input { get; set; } = default!;
+
+    [SupplyParameterFromQuery(Name = "type")]
+    private string? LoginType { get; set; }
 
     [SupplyParameterFromQuery]
     private string? ReturnUrl { get; set; }
@@ -92,13 +242,19 @@
 
         if (HttpMethods.IsGet(HttpContext.Request.Method))
         {
-            // Clear the existing external cookie to ensure a clean login process
-            await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+            await HttpContext.SignOutAsync(
+                IdentityConstants.ExternalScheme);
         }
     }
 
     public async Task LoginUser()
     {
+        if (LoginType != "owner" && LoginType != "doctor")
+        {
+            errorMessage = "Please select a valid login option.";
+            return;
+        }
+
         if (!string.IsNullOrEmpty(Input.Passkey?.Error))
         {
             errorMessage = $"Error: {Input.Passkey.Error}";
@@ -106,57 +262,120 @@
         }
 
         SignInResult result;
+
         if (!string.IsNullOrEmpty(Input.Passkey?.CredentialJson))
         {
-            // When performing passkey sign-in, don't perform form validation.
-            result = await SignInManager.PasskeySignInAsync(Input.Passkey.CredentialJson);
+            if (LoginType != "owner")
+            {
+                errorMessage = "Passkey login is available only for pet owners.";
+                return;
+            }
+
+            result = await SignInManager.PasskeySignInAsync(
+                Input.Passkey.CredentialJson);
         }
         else
         {
-            // If doing a password sign-in, validate the form.
             if (!editContext.Validate())
             {
                 return;
             }
 
-            // This doesn't count login failures towards account lockout
-            // To enable password failures to trigger account lockout, set lockoutOnFailure: true
-            result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+            result = await SignInManager.PasswordSignInAsync(
+                Input.Email.Trim(),
+                Input.Password,
+                Input.RememberMe,
+                lockoutOnFailure: true);
         }
 
         if (result.Succeeded)
         {
+            var user = await UserManager.FindByNameAsync(
+                Input.Email.Trim());
+
+            user ??= await UserManager.GetUserAsync(HttpContext.User);
+
+            if (user == null)
+            {
+                errorMessage = "Unable to identify your account.";
+                return;
+            }
+
+            bool isVeterinarian =
+                await UserManager.IsInRoleAsync(user, "Veterinarian");
+
+            bool isPetOwner =
+                await UserManager.IsInRoleAsync(user, "PetOwner");
+
+            if (LoginType == "doctor" && !isVeterinarian)
+            {
+                await SignInManager.SignOutAsync();
+
+                errorMessage = "This account is not registered as a veterinarian.";
+                return;
+            }
+
+            if (LoginType == "owner" && !isPetOwner)
+            {
+                await SignInManager.SignOutAsync();
+
+                errorMessage = "This account is not registered as a pet owner.";
+                return;
+            }
+
             Logger.LogInformation("User logged in.");
-            RedirectManager.RedirectTo(ReturnUrl);
+
+            if (!string.IsNullOrWhiteSpace(ReturnUrl))
+            {
+                RedirectManager.RedirectTo(ReturnUrl);
+                return;
+            }
+
+            if (isVeterinarian)
+            {
+                RedirectManager.RedirectTo("/doctor/dashboard");
+                return;
+            }
+
+            if (isPetOwner)
+            {
+                RedirectManager.RedirectTo("/owner/dashboard");
+                return;
+            }
+
+            RedirectManager.RedirectTo("/");
         }
         else if (result.RequiresTwoFactor)
         {
             RedirectManager.RedirectTo(
                 "Account/LoginWith2fa",
-                new() { ["returnUrl"] = ReturnUrl, ["rememberMe"] = Input.RememberMe });
+                new()
+                {
+                    ["returnUrl"] = ReturnUrl,
+                    ["rememberMe"] = Input.RememberMe
+                });
         }
         else if (result.IsLockedOut)
         {
             Logger.LogWarning("User account locked out.");
+
             RedirectManager.RedirectTo("Account/Lockout");
         }
         else
         {
-            errorMessage = "Error: Invalid login attempt.";
+            errorMessage = "Invalid login ID or password/PIN.";
         }
     }
 
     private sealed class InputModel
     {
-        [Required]
-        [EmailAddress]
+        [Required(ErrorMessage = "Please enter your email address or Doctor ID.")]
         public string Email { get; set; } = "";
 
-        [Required]
+        [Required(ErrorMessage = "Please enter your password or PIN.")]
         [DataType(DataType.Password)]
         public string Password { get; set; } = "";
 
-        [Display(Name = "Remember me?")]
         public bool RememberMe { get; set; }
 
         public PasskeyInputModel? Passkey { get; set; }

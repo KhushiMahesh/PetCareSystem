@@ -1,0 +1,201 @@
+﻿@page "/owner/medical-records"
+
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "PetOwner")]
+
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using PetCareSystem.Web.Data
+@using PetCareSystem.Web.Models
+
+@inject UserManager<ApplicationUser> UserManager
+@inject ApplicationDbContext DbContext
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager Navigation
+
+<PageTitle>Medical Records | PetCareSystem</PageTitle>
+
+<div class="container py-4">
+
+    <div class="mb-4">
+        <h2>My Pets' Medical Records</h2>
+        <p class="text-muted">
+            View diagnoses, treatments and follow-up instructions recorded by your veterinarians.
+        </p>
+    </div>
+
+    @if (IsLoading)
+    {
+        <div class="text-center py-5">
+            <p>Loading medical records...</p>
+        </div>
+    }
+    else if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <div class="alert alert-danger">
+            @ErrorMessage
+        </div>
+    }
+    else if (MedicalRecords.Count == 0)
+    {
+        <div class="card shadow-sm">
+            <div class="card-body text-center py-5">
+                <h5>No Medical Records Yet</h5>
+                <p class="text-muted mb-0">
+                    Medical records created by your veterinarian will appear here.
+                </p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="mb-3">
+            <span class="badge bg-primary">
+                @MedicalRecords.Count Medical Record(s)
+            </span>
+        </div>
+
+        @foreach (var record in MedicalRecords)
+        {
+            <div class="card shadow-sm mb-4">
+
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-0">@record.Pet.PetName</h5>
+                        <small class="text-muted">
+                            @record.Pet.Species.SpeciesName
+                        </small>
+                    </div>
+
+                    <span class="badge bg-success">Medical Record</span>
+                </div>
+
+                <div class="card-body">
+
+                    <div class="row mb-3">
+
+                        <div class="col-md-6 mb-2">
+                            <strong>Record Date:</strong>
+                            <div>
+                                @IndiaTime(record.RecordDate).ToString("dd MMM yyyy, hh:mm tt")
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-2">
+                            <strong>Veterinarian:</strong>
+                            <div>@record.Veterinarian.FullName</div>
+                        </div>
+
+                        @if (record.Appointment != null)
+                        {
+                            <div class="col-md-6 mb-2">
+                                <strong>Appointment ID:</strong>
+                                <div>@record.AppointmentId</div>
+                            </div>
+
+                            <div class="col-md-6 mb-2">
+                                <strong>Appointment Date:</strong>
+                                <div>
+                                    @IndiaTime(record.Appointment.StartDateTime).ToString("dd MMM yyyy, hh:mm tt")
+                                </div>
+                            </div>
+                        }
+
+                    </div>
+
+                    <hr />
+
+                    <h6>Symptoms</h6>
+                    <p style="white-space: pre-wrap;">@record.Symptoms</p>
+
+                    <h6>Diagnosis</h6>
+                    <p style="white-space: pre-wrap;">@record.Diagnosis</p>
+
+                    <h6>Treatment and Medication Notes</h6>
+                    <p style="white-space: pre-wrap;">
+                        @(string.IsNullOrWhiteSpace(record.TreatmentNotes)
+                            ? "No treatment notes provided."
+                            : record.TreatmentNotes)
+                    </p>
+
+                    <h6>Follow-up Instructions</h6>
+                    <p class="mb-0" style="white-space: pre-wrap;">
+                        @(string.IsNullOrWhiteSpace(record.FollowUpInstructions)
+                            ? "No follow-up instructions provided."
+                            : record.FollowUpInstructions)
+                    </p>
+
+                </div>
+            </div>
+        }
+    }
+
+</div>
+
+@code {
+
+    private List<MedicalRecord> MedicalRecords = new();
+
+    private bool IsLoading = true;
+
+    private string? ErrorMessage;
+
+    private readonly TimeZoneInfo IndiaTimeZone =
+        TimeZoneInfo.FindSystemTimeZoneById(
+            OperatingSystem.IsWindows()
+                ? "India Standard Time"
+                : "Asia/Kolkata");
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var authenticationState =
+                await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+            var user = await UserManager.GetUserAsync(
+                authenticationState.User);
+
+            if (user is null)
+            {
+                Navigation.NavigateTo("/Account/Login");
+                return;
+            }
+
+            var owner = await DbContext.OwnerProfiles
+                .AsNoTracking()
+                .FirstOrDefaultAsync(o => o.UserId == user.Id);
+
+            if (owner is null)
+            {
+                ErrorMessage = "Your owner profile could not be found.";
+                return;
+            }
+
+            MedicalRecords = await DbContext.MedicalRecords
+                .AsNoTracking()
+                .Include(r => r.Pet)
+                    .ThenInclude(p => p.Species)
+                .Include(r => r.Veterinarian)
+                .Include(r => r.Appointment)
+                .Where(r => r.Pet.OwnerProfileId == owner.OwnerProfileId)
+                .OrderByDescending(r => r.RecordDate)
+                .ToListAsync();
+        }
+        catch (Exception)
+        {
+            ErrorMessage = "Unable to load medical records. Please try again.";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private DateTime IndiaTime(DateTime dateTime)
+    {
+        return TimeZoneInfo.ConvertTimeFromUtc(
+            DateTime.SpecifyKind(dateTime, DateTimeKind.Utc),
+            IndiaTimeZone);
+    }
+}

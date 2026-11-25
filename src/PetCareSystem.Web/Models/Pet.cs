@@ -4,20 +4,26 @@ public class Pet
 {
     public int PetId { get; set; }
 
-    // Owner of the animal
     public int OwnerProfileId { get; set; }
 
-    // Animal details
     public string PetName { get; set; } = string.Empty;
 
     public int SpeciesId { get; set; }
 
-    // Breed is optional because some animals may be mixed or unknown
     public int? BreedId { get; set; }
 
     public string? Gender { get; set; }
 
+    // Use this when the exact date of birth is known.
     public DateOnly? DateOfBirth { get; set; }
+
+    // Use these when only an estimated age is known.
+    // Age is stored in months and calculated forward from AgeEstimateRecordedAt.
+    public int? EstimatedAgeMonths { get; set; }
+
+    public DateOnly? AgeEstimateRecordedAt { get; set; }
+
+    public bool IsAgeEstimated { get; set; }
 
     public decimal? Weight { get; set; }
 
@@ -29,7 +35,6 @@ public class Pet
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    // Navigation properties
     public OwnerProfile Owner { get; set; } = null!;
 
     public Species Species { get; set; } = null!;
