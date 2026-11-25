@@ -698,6 +698,9 @@ namespace PetCareSystem.Web.Data.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("CustomBreedName")
+                        .HasColumnType("text");
+
                     b.Property<DateOnly?>("DateOfBirth")
                         .HasColumnType("date");
 

@@ -1,4 +1,4 @@
-```razor
+
 @page "/doctor/dashboard"
 
 @attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Veterinarian")]
@@ -30,13 +30,15 @@
     }
     else
     {
-        <div class="mb-4">
-            <h2>Welcome, @Veterinarian.FullName</h2>
-            <p class="text-muted">
+        <section class="pawberry-vet-hero">
+            <div><span class="pawberry-vet-label">PAWBERRY ANIMAL HOSPITAL 🐾</span>
+            <h1>Welcome back,<br />@Veterinarian.FullName! 💙</h1>
+            <p>
                 Doctor ID: @DoctorId |
                 @Veterinarian.Qualification
-            </p>
-        </div>
+            </p></div>
+            <div class="pawberry-vet-hero-art"><span>🩺</span><span>🐶</span><span>🐱</span><i>♥</i></div>
+        </section>
 
         @if (!string.IsNullOrWhiteSpace(Message))
         {
@@ -49,13 +51,13 @@
         }
 
         <div class="mb-4">
-    <a href="/doctor/billing" class="btn btn-primary me-2">Billing Management</a>
-<a href="/doctor/emergencies" class="btn btn-danger">Emergency Case Management</a>
+    <a href="/doctor/billing" class="btn btn-primary me-2">💳 Billing Management</a>
+<a href="/doctor/emergencies" class="btn btn-danger">🚑 Emergency Case Management</a>
 </div>
-<div class="row g-3 mb-4">
+<div class="row g-3 mb-4 pawberry-vet-stats">
 
             <div class="col-md-4">
-                <div class="card shadow-sm">
+                <div class="card shadow-sm pawberry-vet-stat-card">
                     <div class="card-body">
                         <h6 class="text-muted">Today's Appointments</h6>
                         <h2>@TodayAppointments.Count</h2>
@@ -64,7 +66,7 @@
             </div>
 
             <div class="col-md-4">
-                <div class="card shadow-sm">
+                <div class="card shadow-sm pawberry-vet-stat-card">
                     <div class="card-body">
                         <h6 class="text-muted">Upcoming Appointments</h6>
                         <h2>@UpcomingAppointments.Count</h2>
@@ -73,7 +75,7 @@
             </div>
 
             <div class="col-md-4">
-                <div class="card shadow-sm">
+                <div class="card shadow-sm pawberry-vet-stat-card">
                     <div class="card-body">
                         <h6 class="text-muted">Completed Consultations</h6>
                         <h2>@CompletedCount</h2>
@@ -83,7 +85,7 @@
 
         </div>
 
-        <div class="card shadow-sm mb-4">
+        <div class="card shadow-sm mb-4 pawberry-vet-panel">
             <div class="card-body">
                 <h5>My Profile</h5>
 
@@ -91,11 +93,11 @@
                 <p><strong>Name:</strong> @Veterinarian.FullName</p>
                 <p><strong>Qualification:</strong> @Veterinarian.Qualification</p>
                 <p><strong>Registration Number:</strong> @Veterinarian.ProfessionalRegistrationNumber</p>
-                <p><strong>Consultation Fee:</strong> ₹@Veterinarian.ConsultationFee</p>
+                <p><strong>Consultation Fee:</strong> â‚¹@Veterinarian.ConsultationFee</p>
             </div>
         </div>
 
-        <div class="card shadow-sm mb-4">
+        <div class="card shadow-sm mb-4 pawberry-vet-panel">
             <div class="card-body">
                 <h4 class="mb-3">Today's Appointments</h4>
 
@@ -110,7 +112,7 @@
             </div>
         </div>
 
-        <div class="card shadow-sm mb-4">
+        <div class="card shadow-sm mb-4 pawberry-vet-panel">
             <div class="card-body">
                 <h4 class="mb-3">Upcoming Appointments</h4>
 
@@ -127,7 +129,7 @@
 
         @if (SelectedAppointment is not null)
         {
-            <div class="card shadow-sm mb-4" id="appointment-details">
+            <div class="card shadow-sm mb-4 pawberry-vet-panel" id="appointment-details">
                 <div class="card-body">
 
                     <h4 class="mb-3">Appointment Details</h4>
@@ -184,7 +186,7 @@
 
                     <p>
                         <strong>Breed:</strong>
-                        @(SelectedAppointment.Pet.Breed?.BreedName ?? "Not specified")
+                        @(!string.IsNullOrWhiteSpace(SelectedAppointment.Pet.CustomBreedName) ? SelectedAppointment.Pet.CustomBreedName : SelectedAppointment.Pet.Breed?.BreedName ?? "Not specified")
                     </p>
 
                     <p>
@@ -420,7 +422,7 @@
                                 <div class="alert alert-info">
                                     <strong>@SelectedAppointment.Pet.PetName</strong><br />
                                     Species: @SelectedAppointment.Pet.Species.SpeciesName<br />
-                                    Breed: @(SelectedAppointment.Pet.Breed?.BreedName ?? "Not recorded")<br />
+                                    Breed: @(!string.IsNullOrWhiteSpace(SelectedAppointment.Pet.CustomBreedName) ? SelectedAppointment.Pet.CustomBreedName : SelectedAppointment.Pet.Breed?.BreedName ?? "Not recorded")<br />
                                     Age: @GetSelectedPetAge()<br />
                                     Gender: @(SelectedAppointment.Pet.Gender ?? "Not recorded")<br />
                                     Weight: @(SelectedAppointment.Pet.Weight.HasValue
@@ -463,12 +465,12 @@
 
                                             <p>
                                                 <strong>Recommended age:</strong>
-                                                @(vaccine.RecommendedAge ?? "Unavailable — veterinarian verification required")
+                                                @(vaccine.RecommendedAge ?? "Unavailable â€” veterinarian verification required")
                                             </p>
 
                                             <p>
                                                 <strong>Recommended dose:</strong>
-                                                @(vaccine.RecommendedDose ?? "Unavailable — check product label")
+                                                @(vaccine.RecommendedDose ?? "Unavailable â€” check product label")
                                             </p>
 
                                             <p>
@@ -478,7 +480,7 @@
 
                                             <p>
                                                 <strong>Recommended interval:</strong>
-                                                @(vaccine.RecommendedInterval ?? "Unavailable — veterinarian verification required")
+                                                @(vaccine.RecommendedInterval ?? "Unavailable â€” veterinarian verification required")
                                             </p>
 
                                             <hr />

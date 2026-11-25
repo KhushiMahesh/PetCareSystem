@@ -14,145 +14,127 @@
 
 <PageTitle>Pet Owner Dashboard | Pawberry Animal Hospital</PageTitle>
 
-<div class="container py-4 pawberry-owner-dashboard">
+<div class="pawberry-owner-dashboard">
 
     @if (IsLoading)
     {
-        <div class="text-center py-5">
-            <p>Loading your dashboard...</p>
-        </div>
+        <div class="text-center py-5"><h4>🐾 Loading your dashboard...</h4></div>
     }
     else if (!string.IsNullOrEmpty(ErrorMessage))
     {
-        <div class="alert alert-danger">
-            @ErrorMessage
-        </div>
+        <div class="alert alert-danger">@ErrorMessage</div>
     }
     else if (Owner == null)
     {
-        <div class="alert alert-warning">
-            Your owner profile could not be found.
-            Please contact the administrator.
-        </div>
+        <div class="alert alert-warning">Your owner profile could not be found.</div>
     }
     else
     {
-        <div class="mb-4">
-            <h2>Welcome, @Owner.FullName!</h2>
-            <p class="text-muted">
-                Manage your pets and keep track of their healthcare.
-            </p>
-        </div>
-
-        <section class="pawberry-dashboard-pets mt-4 mb-4">
-            <h3>My Little Paws 🐾</h3>
-            <p class="text-muted">Meet your lovely companions!</p>
-            <div class="row g-3">
-                @foreach (var pet in OwnerPets)
-                {
-                    <div class="col-6 col-md-4 col-lg-3" @key="pet.PetId">
-                        <div class="pawberry-dashboard-pet-card h-100">
-                            <img src="@PetCareSystem.Web.Helpers.PetSpeciesIllustration.GetImagePath(pet.Species?.SpeciesName)" alt="@pet.Species?.SpeciesName" class="pawberry-dashboard-pet-image" />
-                            <h5>@pet.PetName</h5>
-                            <p>@pet.Species?.SpeciesName</p>
-                            @if (pet.Breed != null)
-                            {
-                                <small>@pet.Breed.BreedName</small>
-                            }
-                        </div>
-                    </div>
-                }
+        <section class="pawberry-hero">
+            <div class="pawberry-hero-text">
+                <span class="pawberry-welcome-label">YOUR PAWBERRY HOME 🐾</span>
+                <h1>Welcome back,<br />@Owner.FullName! 💙</h1>
+                <p>Your pet's health, our priority!</p>
+            </div>
+            <div class="pawberry-hero-art">
+                <span class="hero-heart heart-one">♥</span>
+                <span class="hero-heart heart-two">♥</span>
+                <span class="hero-paw paw-one">🐾</span>
+                <div class="hero-pet hero-dog">🐶</div>
+                <div class="hero-pet hero-cat">🐱</div>
+                <span class="hero-heart heart-three">♥</span>
             </div>
         </section>
-        <div class="row g-4">
 
-            <div class="col-md-4">
-                <div class="card shadow-sm border-0 h-100">
-                    <div class="card-body">
-                        <h5>My Pets</h5>
-                        <h2>@PetCount</h2>
-                        <p class="text-muted">Registered pets</p>
+        <section class="pawberry-quick-actions">
+            <a href="/owner/pets" class="pawberry-action action-pink">
+                <span class="action-icon">🐾</span>
+                <span><strong>View My Pets</strong><small>Manage your furry friends</small></span>
+                <b>›</b>
+            </a>
+            <a href="/owner/appointments" class="pawberry-action action-blue">
+                <span class="action-icon">📅</span>
+                <span><strong>Book Appointment</strong><small>Schedule a visit</small></span>
+                <b>›</b>
+            </a>
+            <a href="/owner/medical-records" class="pawberry-action action-purple">
+                <span class="action-icon">🩺</span>
+                <span><strong>View Records</strong><small>Check medical history</small></span>
+                <b>›</b>
+            </a>
+            <a href="/owner/invoices" class="pawberry-action action-mint">
+                <span class="action-icon">💳</span>
+                <span><strong>View Billing</strong><small>See your invoices</small></span>
+                <b>›</b>
+            </a>
+        </section>
 
-                        <a href="/owner/pets" class="btn btn-primary">
-                            Manage Pets
-                        </a>
+        <section class="pawberry-main-grid">
+            <div class="pawberry-box pawberry-pets-box">
+                <div class="pawberry-box-heading">
+                    <h3>🐾 My Little Paws</h3>
+                    <a href="/owner/pets">View All →</a>
+                </div>
+
+                @if (OwnerPets.Any())
+                {
+                    <div class="pawberry-pet-list">
+                        @foreach (var pet in OwnerPets)
+                        {
+                            <a href="/owner/pets" class="pawberry-pet-item" @key="pet.PetId">
+                                <div class="pawberry-pet-avatar">🐾</div>
+                                <strong>@pet.PetName</strong>
+                                <small>@pet.Species?.SpeciesName</small>
+                                <span>♥</span>
+                            </a>
+                        }
                     </div>
+                }
+                else
+                {
+                    <div class="pawberry-empty-pets">
+                        <span>🐶</span>
+                        <p>No pets registered yet!</p>
+                        <a href="/owner/pets">Add your first pet →</a>
+                    </div>
+                }
+
+                <div class="pawberry-pet-count">
+                    🐾 You have <strong>@PetCount</strong> lovely pet(s) registered! 💗
                 </div>
             </div>
 
-            <div class="col-md-4">
-                <div class="card shadow-sm border-0 h-100">
-                    <div class="card-body">
-                        <h5>Appointments</h5>
-                        <p class="text-muted">
-                            Book and manage veterinary appointments.
-                        </p>
-
-                        <a href="/owner/appointments"
-                           class="btn btn-outline-primary">
-                            View Appointments
-                        </a>
-                    </div>
+            <div class="pawberry-box pawberry-care-box">
+                <h3>Pet Care Tip 💡</h3>
+                <p>Keep your pets hydrated and provide a balanced diet!</p>
+                <div class="pawberry-care-art">
+                    <span>🥣</span><span>🧶</span><span>🐱</span>
                 </div>
+                <div class="pawberry-care-footer">Healthy Pets. Happy Hearts. 💙</div>
             </div>
 
-            <div class="col-md-4">
-                <div class="card shadow-sm border-0 h-100">
-                    <div class="card-body">
-                        <h5>Medical Records</h5>
-                        <p class="text-muted">
-                            Keep track of your pets' medical history.
-                        </p>
-
-                        <a href="/owner/medical-records"
-                           class="btn btn-outline-primary">
-                            View Records
-                        </a>
-                    </div>
-                </div>
+            <div class="pawberry-box pawberry-account-box">
+                <h3>👤 Account Information</h3>
+                <hr />
+                <p><strong>Name</strong><br />@Owner.FullName</p>
+                <p><strong>Email</strong><br />@OwnerEmail</p>
+                <a href="/Account/Manage" class="pawberry-account-link">Manage Account →</a>
+                <span class="account-decoration">🐾</span>
             </div>
+        </section>
 
-            <div class="col-md-4">
-                <div class="card shadow-sm border-0 h-100">
-                    <div class="card-body">
-                        <h5>Emergency Case History</h5>
-                        <p class="text-muted">
-                            Track emergency visits, treatment status and assigned veterinarians.
-                        </p>
-                        <a href="/owner/emergency-cases" class="btn btn-outline-danger">
-                            View Emergency History
-                        </a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card shadow-sm border-0 h-100">
-                    <div class="card-body">
-                        <h5>My Invoices</h5>
-                        <p class="text-muted">
-                            View your veterinary bills, payment history and outstanding balances.
-                        </p>
-                        <a href="/owner/invoices" class="btn btn-outline-primary">
-                            View Invoices
-                        </a>
-                    </div>
-                </div>
-            </div>
+        <section class="pawberry-bottom-actions">
+            <a href="/owner/emergency-cases" class="pawberry-bottom-card">
+                <span>🚑</span><div><strong>Emergency History</strong><small>Track emergency visits</small></div><b>›</b>
+            </a>
+            </section>
 
-        </div>
-        <div class="card shadow-sm border-0 mt-4">
-            <div class="card-body">
-                <h5>Account Information</h5>
-
-                <p><strong>Name:</strong> @Owner.FullName</p>
-                <p><strong>Email:</strong> @OwnerEmail</p>
-                <p><strong>City:</strong> @(Owner.City ?? "Not provided")</p>
-            </div>
-        </div>
+        <footer class="pawberry-dashboard-footer">
+            <span>🐾</span> Healthy Pets. Happy Hearts. 💙 <span>🐾</span>
+        </footer>
     }
 
 </div>
-
 @code {
     private OwnerProfile? Owner;
     private string OwnerEmail = string.Empty;

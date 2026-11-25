@@ -19,7 +19,7 @@
 
 <PageTitle>My Pets | Pawberry Animal Hospital</PageTitle>
 
-<div class="container py-4">
+<div class="container py-4 pawberry-owner-page">
 
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
@@ -116,7 +116,14 @@
                                         </option>
                                     }
 
-                                </InputSelect>
+                                    <option value="-1">Other / Not Listed</option>
+</InputSelect>
+                                @if (PetForm.BreedId == -1)
+                                {
+                                    <div class="mt-2">
+                                        <InputText class="form-control" @bind-Value="PetForm.CustomBreedName" placeholder="Enter your pet's breed" />
+                                    </div>
+                                }
                             </div>
 
                             <div class="col-md-6">
@@ -316,7 +323,11 @@
                                 <p class="text-muted mb-3">
                                     @pet.Species?.SpeciesName
 
-                                    @if (pet.Breed != null)
+                                    @if (!string.IsNullOrWhiteSpace(pet.CustomBreedName))
+                                    {
+                                        <span> - @pet.CustomBreedName</span>
+                                    }
+                                    else if (pet.Breed != null)
                                     {
                                         <span> - @pet.Breed.BreedName</span>
                                     }
@@ -464,6 +475,7 @@
     private async Task LoadBreedsForSelectedSpecies()
     {
         PetForm.BreedId = null;
+        PetForm.CustomBreedName = null;
 
         if (PetForm.SpeciesId <= 0)
         {
@@ -513,7 +525,8 @@
         {
             PetName = pet.PetName,
             SpeciesId = pet.SpeciesId,
-            BreedId = pet.BreedId,
+            BreedId = !string.IsNullOrWhiteSpace(pet.CustomBreedName) ? -1 : pet.BreedId,
+            CustomBreedName = pet.CustomBreedName,
             Gender = pet.Gender,
             DateOfBirth = pet.DateOfBirth,
             Weight = pet.Weight,
@@ -585,7 +598,13 @@
                 return;
             }
 
-            if (PetForm.BreedId.HasValue)
+            if (PetForm.BreedId == -1 && string.IsNullOrWhiteSpace(PetForm.CustomBreedName))
+            {
+                ErrorMessage = "Please enter the custom breed name."; 
+                return;
+            }
+
+            if (PetForm.BreedId.HasValue && PetForm.BreedId.Value > 0)
             {
                 var breedExists = await DbContext.Breeds
                     .AnyAsync(b =>
@@ -745,7 +764,8 @@
     {
         pet.PetName = PetForm.PetName.Trim();
         pet.SpeciesId = PetForm.SpeciesId;
-        pet.BreedId = PetForm.BreedId;
+        pet.BreedId = PetForm.BreedId > 0 ? PetForm.BreedId : null;
+        pet.CustomBreedName = PetForm.BreedId == -1 ? PetForm.CustomBreedName?.Trim() : null;
         pet.Gender = PetForm.Gender;
 
         if (PetForm.AgeInputMode == "Exact")
@@ -896,6 +916,8 @@
         public int SpeciesId { get; set; }
 
         public int? BreedId { get; set; }
+
+        public string? CustomBreedName { get; set; }
 
         public string? Gender { get; set; }
 

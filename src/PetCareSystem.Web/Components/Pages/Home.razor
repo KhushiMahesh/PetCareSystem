@@ -1,12 +1,36 @@
 @page "/"
 
+@using Microsoft.AspNetCore.Components.Authorization
+
 @inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Pawberry Animal Hospital</PageTitle>
 
 @code {
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        Navigation.NavigateTo("/Account/Login", replace: true);
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            if (user.IsInRole("Veterinarian"))
+            {
+                Navigation.NavigateTo("/doctor/dashboard", replace: true);
+            }
+            else if (user.IsInRole("PetOwner"))
+            {
+                Navigation.NavigateTo("/owner/dashboard", replace: true);
+            }
+            else
+            {
+                Navigation.NavigateTo("/Account/AccessDenied", replace: true);
+            }
+        }
+        else
+        {
+            Navigation.NavigateTo("/Account/Login", replace: true);
+        }
     }
 }

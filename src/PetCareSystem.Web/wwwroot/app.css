@@ -653,3 +653,864 @@ hr { border-color: var(--pawberry-border); opacity: 1; }
         height: 95px;
     }
 }
+
+/* Pawberry Dashboard Refresh */
+.pawberry-owner-dashboard,
+.pawberry-vet-dashboard {
+    color: #51445b;
+    background: linear-gradient(145deg, #fff9fc, #f4f8ff);
+    border-radius: 26px;
+    padding: 28px !important;
+}
+
+.pawberry-owner-dashboard h2,
+.pawberry-vet-dashboard h2 {
+    color: #a34f80;
+    font-weight: 800;
+}
+
+.pawberry-owner-dashboard .card,
+.pawberry-vet-dashboard .card {
+    border: 1px solid #f1dce9 !important;
+    border-radius: 20px !important;
+    background: #fff;
+    box-shadow: 0 5px 18px rgba(139, 99, 145, .09) !important;
+    transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.pawberry-owner-dashboard .card:hover,
+.pawberry-vet-dashboard .card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 9px 22px rgba(139, 99, 145, .15) !important;
+}
+
+.pawberry-owner-dashboard .card-body,
+.pawberry-vet-dashboard .card-body {
+    padding: 22px;
+}
+
+.pawberry-owner-dashboard h5,
+.pawberry-vet-dashboard h5,
+.pawberry-vet-dashboard h4 {
+    color: #765078;
+    font-weight: 750;
+}
+
+.pawberry-owner-dashboard .btn,
+.pawberry-vet-dashboard .btn {
+    border-radius: 12px;
+    font-weight: 650;
+    padding: 9px 17px;
+}
+
+.pawberry-vet-dashboard .table {
+    border-color: #f1dfeb;
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+.pawberry-vet-dashboard .table thead th {
+    background: #fcecf4;
+    color: #805174;
+    border-bottom: 2px solid #efd5e5;
+}
+
+.pawberry-vet-dashboard .table tbody tr:hover {
+    background: #fff7fb;
+}
+
+.pawberry-owner-dashboard .alert,
+.pawberry-vet-dashboard .alert {
+    border-radius: 15px;
+}
+
+.pawberry-vet-dashboard .form-control,
+.pawberry-vet-dashboard .form-select {
+    border-radius: 11px;
+    border-color: #e9d8e8;
+}
+
+@media (max-width: 576px) {
+    .pawberry-owner-dashboard,
+    .pawberry-vet-dashboard {
+        padding: 14px !important;
+    }
+}
+
+/* PAWBERRY OWNER DASHBOARD - ILLUSTRATED THEME */
+.pawberry-owner-dashboard {
+    padding: 16px;
+    color: #18345f;
+    background: #f8faff;
+    border-radius: 22px;
+}
+
+.pawberry-hero {
+    min-height: 245px;
+    padding: 25px 35px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+    border-radius: 25px;
+    background: linear-gradient(115deg,#e4efff,#c9e1ff);
+}
+
+.pawberry-hero-text { position: relative; z-index: 2; }
+.pawberry-welcome-label {
+    font-size: .75rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+    color: #3979c5;
+}
+.pawberry-hero h1 {
+    color: #123568;
+    font-size: clamp(2rem,4vw,3.2rem);
+    line-height: 1.15;
+    font-weight: 850;
+    margin: 12px 0;
+}
+.pawberry-hero-text p { font-size: 1.1rem; color: #31517d; }
+
+.pawberry-hero-art {
+    height: 210px;
+    min-width: 40%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+.hero-pet {
+    font-size: clamp(5rem,10vw,9rem);
+    filter: drop-shadow(0 8px 5px #5579a52b);
+    position: relative;
+    z-index: 2;
+}
+.hero-dog { transform: rotate(-7deg); }
+.hero-cat { transform: rotate(7deg); margin-left: -12px; }
+.hero-heart,.hero-paw { position: absolute; font-size: 2rem; }
+.heart-one { top: 10px; left: 15%; color: #ed7ca3; }
+.heart-two { top: 25px; right: 15%; color: #ed7ca3; }
+.heart-three { bottom: 15px; left: 30%; color: #ed7ca3; }
+.paw-one { right: 2%; bottom: 10px; color: #78a9e5; }
+
+.pawberry-quick-actions {
+    display: grid;
+    grid-template-columns: repeat(4,minmax(0,1fr));
+    gap: 13px;
+    margin: 20px 0;
+}
+.pawberry-action {
+    min-height: 98px;
+    padding: 13px;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    border-radius: 20px;
+    text-decoration: none;
+    color: #1b3155;
+    transition: .2s;
+}
+.pawberry-action:hover,.pawberry-bottom-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px #7894bd25;
+    color: #1b3155;
+}
+.action-pink { background: #fdeaf1; }
+.action-blue { background: #e7f1ff; }
+.action-purple { background: #f1e9ff; }
+.action-mint { background: #e4f5f2; }
+.action-icon {
+    width: 53px;
+    height: 53px;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: #ffffffb8;
+    font-size: 1.65rem;
+}
+.pawberry-action strong,.pawberry-action small { display:block; }
+.pawberry-action strong { font-size: .91rem; }
+.pawberry-action small { font-size: .73rem; margin-top: 5px; color: #5d6c83; }
+.pawberry-action>b { margin-left: auto; font-size: 1.8rem; }
+
+.pawberry-main-grid {
+    display: grid;
+    grid-template-columns: 1.15fr 1.25fr .65fr;
+    gap: 15px;
+}
+.pawberry-box {
+    min-width: 0;
+    padding: 20px;
+    border: 1px solid #e3ebfa;
+    border-radius: 21px;
+    background: white;
+    box-shadow: 0 4px 15px #7996bd12;
+    position: relative;
+    overflow: hidden;
+}
+.pawberry-box h3 {
+    color: #19365f;
+    font-size: 1.2rem;
+    font-weight: 800;
+}
+.pawberry-box-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 18px;
+}
+.pawberry-box-heading a {
+    color: #287bd9;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+}
+.pawberry-pet-list {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    gap: 14px;
+}
+.pawberry-pet-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    color: #20375b;
+    min-width: 75px;
+}
+.pawberry-pet-avatar {
+    width: 83px;
+    height: 83px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: #e8f1ff;
+    color: #367fd0;
+    font-size: 2.3rem;
+}
+.pawberry-pet-item strong { margin-top: 8px; }
+.pawberry-pet-item small { color: #718099; }
+.pawberry-pet-item>span { color: #ed83a5; font-size: 1.2rem; }
+.pawberry-pet-count {
+    margin-top: 17px;
+    padding: 10px;
+    border-radius: 15px;
+    background: #fff0f5;
+    text-align: center;
+    color: #79516d;
+    font-size: .83rem;
+}
+.pawberry-empty-pets { text-align:center; padding:15px; }
+.pawberry-empty-pets span { font-size:3rem; }
+.pawberry-empty-pets a { color:#287bd9; font-weight:700; }
+
+.pawberry-care-box {
+    background: linear-gradient(145deg,#fff0f5,#ffe5ef);
+    border: 0;
+}
+.pawberry-care-box p {
+    max-width: 240px;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #344967;
+    margin-top: 17px;
+}
+.pawberry-care-art {
+    display:flex;
+    justify-content:flex-end;
+    align-items:center;
+    gap:9px;
+    font-size:2.8rem;
+    min-height:90px;
+}
+.pawberry-care-footer {
+    text-align:center;
+    font-weight:750;
+    color:#28558b;
+    margin-top:8px;
+}
+.pawberry-account-box h3 { font-size:1.05rem; }
+.pawberry-account-box p {
+    font-size:.85rem;
+    line-height:1.5;
+    overflow-wrap:anywhere;
+    margin:13px 0;
+}
+.pawberry-account-link {
+    color:#287bd9;
+    font-size:.85rem;
+    font-weight:700;
+    text-decoration:none;
+}
+.account-decoration {
+    position:absolute;
+    bottom:5px;
+    right:12px;
+    font-size:2rem;
+    opacity:.2;
+}
+.pawberry-bottom-actions {
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:12px;
+    margin-top:16px;
+}
+.pawberry-bottom-card {
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:14px;
+    border-radius:17px;
+    border:1px solid #e5ecfa;
+    background:white;
+    text-decoration:none;
+    color:#20375b;
+    transition:.2s;
+}
+.pawberry-bottom-card>span { font-size:1.7rem; }
+.pawberry-bottom-card strong,.pawberry-bottom-card small { display:block; }
+.pawberry-bottom-card strong { font-size:.82rem; }
+.pawberry-bottom-card small { font-size:.68rem; color:#718099; margin-top:4px; }
+.pawberry-bottom-card>b { margin-left:auto; color:#438ce0; font-size:1.3rem; }
+.pawberry-dashboard-footer {
+    text-align:center;
+    margin:18px -16px -16px;
+    padding:20px;
+    border-radius:0 0 22px 22px;
+    background:linear-gradient(90deg,#dceaff,#c6e0ff,#dceaff);
+    color:#24558d;
+    font-size:1.1rem;
+    font-weight:800;
+}
+@media(max-width:1100px) {
+    .pawberry-main-grid { grid-template-columns:1fr 1fr; }
+    .pawberry-account-box { grid-column:span 2; }
+    .pawberry-quick-actions { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .pawberry-bottom-actions { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media(max-width:600px) {
+    .pawberry-owner-dashboard { padding:9px; }
+    .pawberry-hero { min-height:190px; padding:18px; }
+    .pawberry-hero h1 { font-size:1.65rem; }
+    .pawberry-hero-text p { font-size:.85rem; }
+    .pawberry-hero-art { min-width:35%; height:140px; }
+    .hero-pet { font-size:3.8rem; }
+    .pawberry-quick-actions { gap:8px; }
+    .pawberry-action { padding:9px; gap:6px; min-height:78px; }
+    .action-icon { width:37px; height:37px; font-size:1.1rem; }
+    .pawberry-action strong { font-size:.75rem; }
+    .pawberry-action small { font-size:.63rem; }
+    .pawberry-action>b { display:none; }
+    .pawberry-main-grid { grid-template-columns:1fr; }
+    .pawberry-account-box { grid-column:auto; }
+    .pawberry-bottom-actions { grid-template-columns:1fr; }
+}
+
+/* PAWBERRY VETERINARIAN DASHBOARD */
+.pawberry-vet-dashboard {
+    background: #f8faff;
+    color: #20375b;
+    border-radius: 23px;
+    padding: 20px !important;
+}
+.pawberry-vet-hero {
+    min-height: 210px;
+    padding: 28px 35px;
+    border-radius: 25px;
+    background: linear-gradient(115deg,#e4efff,#c9e1ff);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    overflow: hidden;
+    margin-bottom: 22px;
+}
+.pawberry-vet-label {
+    color: #3979c5;
+    font-size: .75rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+}
+.pawberry-vet-hero h1 {
+    color: #123568;
+    font-weight: 850;
+    font-size: clamp(2rem,4vw,3rem);
+    margin: 12px 0;
+}
+.pawberry-vet-hero p { color: #31517d; }
+.pawberry-vet-hero-art {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    position: relative;
+}
+.pawberry-vet-hero-art span { font-size: clamp(3.5rem,7vw,6rem); }
+.pawberry-vet-hero-art i {
+    position: absolute;
+    top: 0;
+    right: 5px;
+    color: #ed83a5;
+    font-size: 2rem;
+}
+.pawberry-vet-dashboard .pawberry-vet-stat-card {
+    border: 1px solid #e3ebfa !important;
+    border-radius: 20px !important;
+    background: linear-gradient(145deg,#fff,#edf4ff) !important;
+    box-shadow: 0 4px 15px #7996bd15 !important;
+    height: 100%;
+}
+.pawberry-vet-dashboard .pawberry-vet-stat-card:nth-child(2) {
+    background: linear-gradient(145deg,#fff,#fff0f5) !important;
+}
+.pawberry-vet-dashboard .pawberry-vet-stat-card:nth-child(3) {
+    background: linear-gradient(145deg,#fff,#f2eaff) !important;
+}
+.pawberry-vet-dashboard .pawberry-vet-stat-card h2 {
+    color: #397bc6;
+    font-size: 2.3rem;
+    font-weight: 850;
+}
+.pawberry-vet-dashboard .pawberry-vet-stat-card h6 {
+    font-weight: 750;
+    color: #526784 !important;
+}
+.pawberry-vet-dashboard .pawberry-vet-panel {
+    border: 1px solid #e3ebfa !important;
+    border-radius: 21px !important;
+    background: #fff !important;
+    box-shadow: 0 4px 15px #7996bd12 !important;
+}
+.pawberry-vet-dashboard .card-body { padding: 22px; }
+.pawberry-vet-dashboard h4,
+.pawberry-vet-dashboard h5 {
+    color: #294c7b;
+    font-weight: 800;
+}
+.pawberry-vet-dashboard .btn {
+    border-radius: 12px;
+    font-weight: 650;
+    padding: 9px 16px;
+}
+.pawberry-vet-dashboard .form-control,
+.pawberry-vet-dashboard .form-select {
+    border: 1px solid #dce5f5;
+    border-radius: 12px;
+    padding: 10px 13px;
+}
+.pawberry-vet-dashboard textarea.form-control { min-height: 85px; }
+.pawberry-vet-dashboard .table {
+    border-color: #e6eefa;
+    border-radius: 13px;
+    overflow: hidden;
+}
+.pawberry-vet-dashboard .table thead th {
+    background: #eaf2ff;
+    color: #315987;
+    border-bottom: 2px solid #d7e5fa;
+}
+.pawberry-vet-dashboard .table tbody tr:hover { background: #f6f9ff; }
+.pawberry-vet-dashboard .alert { border-radius: 14px; }
+.pawberry-vet-dashboard .border.rounded {
+    border-color: #e3eafa !important;
+    border-radius: 15px !important;
+    background: #fbfcff;
+}
+@media(max-width:650px) {
+    .pawberry-vet-dashboard { padding: 10px !important; }
+    .pawberry-vet-hero { padding: 20px; min-height: 170px; }
+    .pawberry-vet-hero h1 { font-size: 1.65rem; }
+    .pawberry-vet-hero-art span { font-size: 3rem; }
+    .pawberry-vet-dashboard .card-body { padding: 15px; }
+}
+
+/* PAWBERRY FEATURE PAGES - OWNER */
+.pawberry-owner-page {
+    color: #493b58;
+    background: #fff8fb;
+    border-radius: 22px;
+    padding: 25px !important;
+}
+.pawberry-owner-page h2,
+.pawberry-owner-page h3,
+.pawberry-owner-page h4,
+.pawberry-owner-page h5 {
+    color: #a84f80;
+    font-weight: 800;
+}
+.pawberry-owner-page .card {
+    border: 1px solid #f4dce9 !important;
+    border-radius: 19px !important;
+    box-shadow: 0 5px 17px #b76b9212 !important;
+    overflow: hidden;
+}
+.pawberry-owner-page .card-header {
+    background: #fff0f6;
+    color: #984b75;
+    font-weight: 750;
+    border-bottom: 1px solid #f5dce9;
+}
+.pawberry-owner-page .table thead th {
+    background: #ffedf4;
+    color: #91496e;
+    border-color: #f4dce9;
+}
+.pawberry-owner-page .table td,
+.pawberry-owner-page .table th {
+    vertical-align: middle;
+}
+.pawberry-owner-page .table tbody tr:hover {
+    background: #fff7fa;
+}
+.pawberry-owner-page .btn {
+    border-radius: 12px;
+    font-weight: 650;
+    padding: 9px 15px;
+}
+.pawberry-owner-page .btn-primary {
+    background: #d96f9e;
+    border-color: #d96f9e;
+}
+.pawberry-owner-page .btn-primary:hover {
+    background: #bd5685;
+    border-color: #bd5685;
+}
+.pawberry-owner-page .form-control,
+.pawberry-owner-page .form-select {
+    border: 1px solid #eed5e2;
+    border-radius: 11px;
+    padding: 10px 12px;
+}
+.pawberry-owner-page .alert {
+    border-radius: 14px;
+}
+.pawberry-owner-page .badge {
+    border-radius: 20px;
+    padding: 7px 10px;
+}
+
+/* PAWBERRY FEATURE PAGES - VETERINARIAN */
+.pawberry-vet-page {
+    color: #304361;
+    background: #f6f9ff;
+    border-radius: 22px;
+    padding: 25px !important;
+}
+.pawberry-vet-page h2,
+.pawberry-vet-page h3,
+.pawberry-vet-page h4,
+.pawberry-vet-page h5 {
+    color: #386ba9;
+    font-weight: 800;
+}
+.pawberry-vet-page .card {
+    border: 1px solid #dce8fa !important;
+    border-radius: 19px !important;
+    box-shadow: 0 5px 17px #6385b312 !important;
+    overflow: hidden;
+}
+.pawberry-vet-page .card-header {
+    background: #eaf2ff;
+    color: #345d91;
+    font-weight: 750;
+    border-bottom: 1px solid #dce8fa;
+}
+.pawberry-vet-page .table thead th {
+    background: #eaf2ff;
+    color: #345d91;
+    border-color: #dce8fa;
+}
+.pawberry-vet-page .table td,
+.pawberry-vet-page .table th {
+    vertical-align: middle;
+}
+.pawberry-vet-page .table tbody tr:hover {
+    background: #f5f8ff;
+}
+.pawberry-vet-page .btn {
+    border-radius: 12px;
+    font-weight: 650;
+    padding: 9px 15px;
+}
+.pawberry-vet-page .btn-primary {
+    background: #5688c8;
+    border-color: #5688c8;
+}
+.pawberry-vet-page .btn-primary:hover {
+    background: #3d70b0;
+    border-color: #3d70b0;
+}
+.pawberry-vet-page .form-control,
+.pawberry-vet-page .form-select {
+    border: 1px solid #d7e3f5;
+    border-radius: 11px;
+    padding: 10px 12px;
+}
+.pawberry-vet-page .alert {
+    border-radius: 14px;
+}
+.pawberry-vet-page .badge {
+    border-radius: 20px;
+    padding: 7px 10px;
+}
+
+@media(max-width:650px) {
+    .pawberry-owner-page,
+    .pawberry-vet-page {
+        padding: 12px !important;
+    }
+}
+
+/* PAWBERRY CUTE SIDEBAR */
+.page > .sidebar {
+    background: linear-gradient(180deg,#ffe1ee 0%,#f4e5ff 52%,#e4f3ff 100%) !important;
+    border-right: 1px solid #f0d5e7;
+}
+.sidebar .pawberry-brand-panel {
+    min-height: 165px;
+    background: linear-gradient(145deg,#ffc9df,#e8d7ff) !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px 12px !important;
+    border-bottom: 1px solid #f0d5e7;
+}
+.sidebar .navbar-brand {
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    white-space: normal;
+    text-align: center;
+    color: #a84478 !important;
+    text-decoration: none;
+    width: 100%;
+}
+.pawberry-logo-art {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-size: 2.6rem;
+    line-height: 1.2;
+}
+.pawberry-logo-art i {
+    position: absolute;
+    color: #ed6c9e;
+    font-size: 1.1rem;
+    font-style: normal;
+    top: -8px;
+    right: -13px;
+}
+.pawberry-brand-name {
+    font-size: 1.25rem;
+    font-weight: 850;
+    line-height: 1.35;
+    color: #a84478;
+}
+.pawberry-brand-name small {
+    display: block;
+    margin-top: 5px;
+    font-size: .65rem;
+    font-weight: 650;
+    color: #98658b;
+    letter-spacing: .3px;
+}
+.sidebar .pawberry-sidebar {
+    background: transparent !important;
+    padding: 16px 10px;
+}
+.sidebar .nav-item {
+    margin: 5px 0;
+}
+.sidebar .nav-link {
+    color: #705778 !important;
+    border-radius: 15px;
+    padding: 12px 15px !important;
+    font-weight: 700;
+    transition: all .2s ease;
+}
+.sidebar .nav-link:hover {
+    background: #fff0f7 !important;
+    color: #b64f83 !important;
+    transform: translateX(3px);
+}
+.sidebar .nav-link.active {
+    background: #fff !important;
+    color: #c34f88 !important;
+    box-shadow: 0 5px 16px #b56b9220;
+}
+.sidebar .nav-link span {
+    margin-right: 8px;
+}
+.sidebar form .nav-link {
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: 0;
+}
+@media(max-width:640px) {
+    .sidebar .pawberry-brand-panel { min-height: 125px; }
+    .pawberry-logo-art { font-size: 2rem; }
+}
+
+/* PAWBERRY - CUTE DECORATIVE FEATURE HEADERS */
+.pawberry-owner-page::before {
+    content: "??  PAWBERRY PET CLUB  ??  Where Every Little Paw Matters";
+    display: block;
+    padding: 17px 22px;
+    margin-bottom: 24px;
+    border-radius: 19px;
+    background: linear-gradient(110deg,#ffe0ed,#f5e6ff,#e8f4ff);
+    color: #a34e7b;
+    font-size: .95rem;
+    font-weight: 800;
+    letter-spacing: .5px;
+    box-shadow: 0 4px 14px #bd7d9c18;
+}
+
+.pawberry-vet-page::before {
+    content: "??  PAWBERRY VETERINARY CARE  ??  Caring for Every Little Life";
+    display: block;
+    padding: 17px 22px;
+    margin-bottom: 24px;
+    border-radius: 19px;
+    background: linear-gradient(110deg,#dcecff,#e9e2ff,#e1f8f2);
+    color: #416d9e;
+    font-size: .95rem;
+    font-weight: 800;
+    letter-spacing: .5px;
+    box-shadow: 0 4px 14px #6385b318;
+}
+
+.pawberry-owner-page h2::after,
+.pawberry-vet-page h2::after {
+    content: "  ?";
+    font-size: .8em;
+}
+
+.pawberry-owner-page .card:hover,
+.pawberry-vet-page .card:hover {
+    box-shadow: 0 8px 22px #8298b322 !important;
+    transition: box-shadow .2s ease;
+}
+
+.pawberry-owner-page .form-label,
+.pawberry-vet-page .form-label {
+    font-weight: 700;
+    color: #52647e;
+}
+
+.pawberry-owner-page .form-control:focus,
+.pawberry-owner-page .form-select:focus {
+    border-color: #e69abd;
+    box-shadow: 0 0 0 .2rem #f8d9e8;
+}
+
+.pawberry-vet-page .form-control:focus,
+.pawberry-vet-page .form-select:focus {
+    border-color: #91b9e8;
+    box-shadow: 0 0 0 .2rem #dceaff;
+}
+
+@media(max-width:650px) {
+    .pawberry-owner-page::before,
+    .pawberry-vet-page::before {
+        padding: 13px;
+        font-size: .78rem;
+    }
+}
+
+/* PAWBERRY LOGIN EXPERIENCE */
+.pawberry-login-page {
+    min-height: 85vh;
+    max-width: 1100px;
+    background: linear-gradient(135deg,#fff1f7,#f5edff,#eaf5ff);
+    border-radius: 28px;
+    padding: 38px !important;
+    color: #59445f;
+}
+.pawberry-login-page h1 {
+    color: #a8497b;
+    font-weight: 850;
+}
+.pawberry-login-page h2,
+.pawberry-login-page h3 {
+    color: #a8497b;
+    font-weight: 800;
+}
+.pawberry-login-card {
+    border: 2px solid #f3d9e9 !important;
+    border-radius: 25px !important;
+    background: rgba(255,255,255,.94) !important;
+    box-shadow: 0 10px 30px #9e70951c !important;
+    overflow: hidden;
+    transition: transform .2s ease,box-shadow .2s ease;
+}
+.pawberry-login-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 15px 35px #9e70952b !important;
+}
+.pawberry-login-art {
+    font-size: 3.5rem;
+    padding: 12px;
+    margin-bottom: 8px;
+}
+.pawberry-login-page .form-control {
+    border: 1.5px solid #ead7e7;
+    border-radius: 13px;
+    background: #fffaff;
+}
+.pawberry-login-page .form-control:focus {
+    border-color: #df91b7;
+    box-shadow: 0 0 0 .2rem #f8dfeb;
+}
+.pawberry-login-page .btn {
+    border-radius: 13px;
+    padding: 11px 16px;
+    font-weight: 750;
+}
+.pawberry-login-page .btn-primary {
+    background: #d96f9e;
+    border-color: #d96f9e;
+}
+.pawberry-login-page .btn-primary:hover {
+    background: #bd5685;
+    border-color: #bd5685;
+}
+.pawberry-login-page .btn-success {
+    background: #6599cf;
+    border-color: #6599cf;
+}
+.pawberry-login-page .btn-success:hover {
+    background: #477fb9;
+    border-color: #477fb9;
+}
+.pawberry-login-page a {
+    color: #b45486;
+    font-weight: 650;
+}
+.pawberry-login-page .text-secondary {
+    color: #81728b !important;
+}
+.pawberry-login-page .form-check-input:checked {
+    background-color: #d96f9e;
+    border-color: #d96f9e;
+}
+.pawberry-login-page .alert,
+.pawberry-login-page .validation-message {
+    border-radius: 12px;
+}
+@media(max-width:650px) {
+    .pawberry-login-page {
+        padding: 18px !important;
+    }
+    .pawberry-login-art {
+        font-size: 2.7rem;
+    }
+}

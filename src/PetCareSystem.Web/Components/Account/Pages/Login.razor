@@ -15,7 +15,7 @@
 
 @if (string.IsNullOrWhiteSpace(LoginType))
 {
-    <div class="container py-5">
+    <div class="container py-5 pawberry-login-page">
         <div class="text-center mb-5">
             <h1>Welcome to Pawberry Animal Hospital</h1>
             <p class="text-secondary">
@@ -25,9 +25,9 @@
 
         <div class="row justify-content-center g-4">
             <div class="col-md-5">
-                <div class="card shadow-sm h-100">
+                <div class="card shadow-sm h-100 pawberry-login-card">
                     <div class="card-body text-center p-5">
-                        <div style="font-size: 55px;">🐾</div>
+                        <div class="pawberry-login-art">🐶 🐾</div>
                         <h3 class="mt-3">Pet Owner</h3>
                         <p class="text-secondary">
                             Access your pets, book appointments,
@@ -48,9 +48,9 @@
             </div>
 
             <div class="col-md-5">
-                <div class="card shadow-sm h-100">
+                <div class="card shadow-sm h-100 pawberry-login-card">
                     <div class="card-body text-center p-5">
-                        <div style="font-size: 55px;">🩺</div>
+                        <div class="pawberry-login-art">🐶 🐾</div>
                         <h3 class="mt-3">Veterinarian</h3>
                         <p class="text-secondary">
                             Access your appointments, patient details,
@@ -73,16 +73,16 @@
 }
 else
 {
-    <div class="container py-5">
+    <div class="container py-5 pawberry-login-page">
         <div class="row justify-content-center">
             <div class="col-md-6 col-lg-5">
-                <div class="card shadow-sm">
+                <div class="card shadow-sm pawberry-login-card">
                     <div class="card-body p-4">
 
                         @if (LoginType == "owner")
                         {
                             <div class="text-center mb-4">
-                                <div style="font-size: 45px;">🐾</div>
+                                <div class="pawberry-login-art">🐶 🍓</div>
                                 <h2>Pet Owner Login</h2>
                                 <p class="text-secondary">
                                     Sign in using your registered email and password.
@@ -92,7 +92,7 @@ else
                         else if (LoginType == "doctor")
                         {
                             <div class="text-center mb-4">
-                                <div style="font-size: 45px;">🩺</div>
+                                <div class="pawberry-login-art">🐶 🍓</div>
                                 <h2>Veterinarian Login</h2>
                                 <p class="text-secondary">
                                     Sign in using your hospital-issued Doctor ID and PIN.
@@ -170,18 +170,7 @@ else
 
                                 @if (LoginType == "owner")
                                 {
-                                    <hr />
-
-                                    <div class="text-center">
-                                        <PasskeySubmit Operation="PasskeyOperation.Request"
-                                                       Name="Input.Passkey"
-                                                       EmailName="Input.Email"
-                                                       class="btn btn-link">
-                                            Log in with a passkey
-                                        </PasskeySubmit>
-                                    </div>
-
-                                    <hr />
+                                    
 
                                     <div class="text-center">
                                         <p>
@@ -190,11 +179,7 @@ else
                                             </a>
                                         </p>
 
-                                        <p>
-                                            <a href="Account/ResendEmailConfirmation">
-                                                Resend email confirmation
-                                            </a>
-                                        </p>
+                                        
 
                                         <p>
                                             Don't have an account?

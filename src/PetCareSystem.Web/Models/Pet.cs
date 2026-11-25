@@ -12,6 +12,8 @@ public class Pet
 
     public int? BreedId { get; set; }
 
+    public string? CustomBreedName { get; set; }
+
     public string? Gender { get; set; }
 
     // Use this when the exact date of birth is known.
