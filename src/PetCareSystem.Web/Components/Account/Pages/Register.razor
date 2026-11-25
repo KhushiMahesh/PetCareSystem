@@ -105,8 +105,14 @@
 
 @code {
 
+    protected override void OnInitialized()
+    {
+        if (Input is null)
+            Input = new();
+    }
+
     [SupplyParameterFromForm(FormName = "register")]
-    private RegisterInputModel Input { get; set; } = new();
+    private RegisterInputModel Input { get; set; } = default!;
 
     private string? ErrorMessage { get; set; }
 

@@ -466,7 +466,7 @@
                 .OrderByDescending(r => r.VaccinationDate)
                 .ToListAsync();
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             ErrorMessage =
                 "Unable to load vaccination information. Please try again.";

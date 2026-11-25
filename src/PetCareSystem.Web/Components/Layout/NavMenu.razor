@@ -4,9 +4,28 @@
 
 <div class="top-row ps-3 navbar navbar-dark pawberry-brand-panel">
     <div class="container-fluid">
-        <a class="navbar-brand" href="/">
-            <span class="pawberry-logo-art"><span>🐶</span><span>🐱</span><i>♥</i></span><span class="pawberry-brand-name">Pawberry<br />Animal Hospital <small>Where Every Little Paw Matters</small></span>
-        </a>
+        <AuthorizeView>
+            <Authorized Context="auth">
+                @if (auth.User.IsInRole("PetOwner"))
+                {
+                    <a class="navbar-brand" href="/owner/dashboard">
+                        <span class="pawberry-logo-art"><span>🐶</span><span>🐱</span><i>♥</i></span><span class="pawberry-brand-name">Pawberry<br />Animal Hospital <small>Where Every Little Paw Matters</small></span>
+                    </a>
+                }
+                else if (auth.User.IsInRole("Veterinarian"))
+                {
+                    <a class="navbar-brand" href="/doctor/dashboard">
+                        <span class="pawberry-logo-art"><span>🐶</span><span>🐱</span><i>♥</i></span><span class="pawberry-brand-name">Pawberry<br />Animal Hospital <small>Where Every Little Paw Matters</small></span>
+                    </a>
+                }
+            </Authorized>
+            <NotAuthorized>
+                <a class="navbar-brand" href="/Account/Login">
+                    <span class="pawberry-logo-art"><span>🐶</span><span>🐱</span><i>♥</i></span><span class="pawberry-brand-name">Pawberry<br />Animal Hospital <small>Where Every Little Paw Matters</small></span>
+                </a>
+            </NotAuthorized>
+        </AuthorizeView>
+            
     </div>
 </div>
 

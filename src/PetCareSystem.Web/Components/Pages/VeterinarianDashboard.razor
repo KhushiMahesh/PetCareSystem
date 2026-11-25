@@ -181,7 +181,7 @@
 
                     <p>
                         <strong>Species:</strong>
-                        @SelectedAppointment.Pet.Species.SpeciesName
+                        @(SelectedAppointment.Pet.Species?.SpeciesName ?? "Not specified")
                     </p>
 
                     <p>
@@ -410,7 +410,7 @@
                         {
                             <div class="alert alert-warning">
                                 No active vaccines are currently available for
-                                @SelectedAppointment.Pet.Species.SpeciesName.
+                                @(SelectedAppointment.Pet.Species?.SpeciesName ?? "Not specified").
                             </div>
                         }
                         else
@@ -421,7 +421,7 @@
                             {
                                 <div class="alert alert-info">
                                     <strong>@SelectedAppointment.Pet.PetName</strong><br />
-                                    Species: @SelectedAppointment.Pet.Species.SpeciesName<br />
+                                    Species: @(SelectedAppointment.Pet.Species?.SpeciesName ?? "Not specified")<br />
                                     Breed: @(!string.IsNullOrWhiteSpace(SelectedAppointment.Pet.CustomBreedName) ? SelectedAppointment.Pet.CustomBreedName : SelectedAppointment.Pet.Breed?.BreedName ?? "Not recorded")<br />
                                     Age: @GetSelectedPetAge()<br />
                                     Gender: @(SelectedAppointment.Pet.Gender ?? "Not recorded")<br />
@@ -617,7 +617,7 @@
 
                     <h5>Update Appointment Status</h5>
 
-                    @if (SelectedAppointment.Status != "Completed"
+                    @if (SelectedAppointment is not null && SelectedAppointment.Status != "Completed"
                          && SelectedAppointment.Status != "Cancelled"
                          && SelectedAppointment.Status != "Canceled")
                     {
