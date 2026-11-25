@@ -123,3 +123,45 @@
         overflow-y: auto;
     }
 }
+
+/* PAWBERRY NAVIGATION */
+.navbar-brand {
+    color: #bd557d !important;
+    font-size: 1.18rem;
+    font-weight: 800;
+    padding: 1.2rem 1rem .8rem;
+    white-space: normal;
+}
+
+.navbar-toggler {
+    color: #bd557d;
+    border-color: #edc5d5;
+    background-color: rgba(255,255,255,.7);
+}
+
+.nav-item { padding: .2rem .7rem; }
+
+.nav-item ::deep .nav-link {
+    color: #53647a;
+    border-radius: 12px;
+    min-height: 2.9rem;
+    padding: .55rem .85rem;
+    font-weight: 600;
+    transition: all .2s ease;
+}
+
+.nav-item ::deep .nav-link:hover {
+    color: #bd557d;
+    background: rgba(255,255,255,.8);
+    transform: translateX(2px);
+}
+
+.nav-item ::deep a.active {
+    color: #bd557d;
+    background: #fff;
+    box-shadow: 0 3px 12px rgba(189,85,125,.10);
+}
+
+.nav-item ::deep a.active .bi {
+    filter: none;
+}

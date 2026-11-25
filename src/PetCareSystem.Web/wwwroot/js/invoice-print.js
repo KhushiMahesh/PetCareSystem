@@ -1,4 +1,4 @@
-﻿window.printInvoice = function (elementId) {
+window.printInvoice = function (elementId) {
     const invoice = document.getElementById(elementId);
 
     if (!invoice) {
@@ -17,7 +17,7 @@
     printArea.innerHTML = `
         <div class="invoice-header">
             <div>
-                <h1>🐾 PetCareSystem</h1>
+                <h1>🐾 Pawberry Animal Hospital</h1>
                 <p>Veterinary Care & Billing</p>
             </div>
             <div class="invoice-label">INVOICE</div>
